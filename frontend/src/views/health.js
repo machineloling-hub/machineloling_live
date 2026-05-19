@@ -8,6 +8,10 @@ import {
 import { renderPoolStrengthPanel } from "../widgets/strength.js";
 
 
+async function refreshHealth() {
+  const eqBox = $("#health-equations");
+  const rt = $("#health-redundancy-table");
+  const rh = $("#health-redundancy-heatmap");
   if (state.pool.length === 0) {
     $("#health-strength").innerHTML = "";
     eqBox.innerHTML = '<div class="empty-msg">Add champions to your pool to see health.</div>';
