@@ -110,11 +110,6 @@ const RANK_COLORS = {
   master_plus: "#c787ff",
 };
 
-async function _loadEngine() {
-  if (_engineModule) return _engineModule;
-  if (_enginePromise) return _enginePromise;
-  _enginePromise = (async () => {
-
 // ── DOM helpers ───────────────────────────────────────────────────────────
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
