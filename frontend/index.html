@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Champion Pool Designer</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <h1>Champion Pool Designer</h1>
+
+    <label>Your role
+      <select id="role">
+        <option value="TOP">TOP</option>
+        <option value="JUNGLE">JUNGLE</option>
+        <option value="MID">MID</option>
+        <option value="ADC">ADC</option>
+        <option value="SUP" selected>SUP</option>
+      </select>
+    </label>
+
+    <label>Your pool
+      <div id="pool-input-wrap">
+        <div id="pool-chips"></div>
+        <input id="pool-search" type="text" placeholder="type to add…" autocomplete="off">
+        <div id="pool-suggestions"></div>
+      </div>
+      <button id="clear-pool" class="btn-sm">Clear pool</button>
+    </label>
+
+    <label>Top-X picks scored per opponent: <span id="top-x-val">3</span>
+      <input id="top-x" type="range" min="1" max="8" step="1" value="3">
+      <span class="hint">For each opponent (or partner), only your pool's <b>X best</b> champs against them count toward the score. Models the fact that you'll only play one of your top picks into a given opponent — not your whole pool. Lower X = more reliant on your single best counter; higher X = rewards depth.</span>
+    </label>
+
+    <fieldset class="weights-box">
+      <legend>Score weights</legend>
+      <span class="hint">Total = w·in-lane + w·out-of-lane + w·synergy + w·blindability. Used by Pool Health total curve, Replacement, Pool Builder, Redundancy ranking.</span>
+      <label>In-lane matchup: <span id="w-in-lane-val">0.7</span>
+        <input id="w-in-lane" type="range" min="0" max="1" step="0.1" value="0.7">
+      </label>
+      <label>Out-of-lane matchup: <span id="w-out-lane-val">0.5</span>
+        <input id="w-out-lane" type="range" min="0" max="1" step="0.1" value="0.5">
+      </label>
+      <label>Overall synergy: <span id="w-synergy-val">1.0</span>
+        <input id="w-synergy" type="range" min="0" max="1" step="0.1" value="1.0">
+      </label>
+      <label>Blindability: <span id="w-blind-val">0.9</span>
+        <input id="w-blind" type="range" min="0" max="1" step="0.1" value="0.9">
+      </label>
+    </fieldset>
+
+    <label>Rank bracket
+      <select id="patch"></select>
+      <span class="hint" style="margin-left:0;">Patch 16.9. PR-weighted scoring + pick-rate floor use this bracket's playrates.</span>
+      <span class="hint" style="margin-left:0;margin-top:4px;color:#888;">Matchup &amp; synergy Δ data comes from the cross-patch D+ 16.1–16.4 win-rate-corrected dataset, so those values are patch-invariant — only playrates change with the bracket above.</span>
+    </label>
+
+    <label class="checkbox-label">
+      <input id="pr-weighted" type="checkbox" checked>
+      <strong>PR-weighted scoring</strong>
+      <span class="hint">Weight columns by their solo-queue pick rate.</span>
+    </label>
+
+    <label>Opponent / partner pick-rate floor: <span id="pr-floor-val">0.5%</span>
+      <input id="pr-floor" type="range" min="0.1" max="2" step="0.05" value="0.5">
+    </label>
+
+    <div id="status"></div>
+  </aside>
+
+  <main id="main">
+    <div class="tabs-top">
+      <button class="tab-btn active" data-view="welcome">Welcome</button>
+      <button class="tab-btn" data-view="health">Pool Health</button>
+      <button class="tab-btn" data-view="matchup">Matchup Coverage</button>
+      <button class="tab-btn" data-view="synergy">Synergy Coverage</button>
+      <button class="tab-btn" data-view="bans">Ban Recommender</button>
+      <button class="tab-btn" data-view="replacements">Replacement Finder</button>
+      <button class="tab-btn" data-view="builder">Pool Builder</button>
+      <button class="tab-btn" data-view="blindability">Blindability</button>
+      <button class="tab-btn" data-view="comparer">Individual Champ Compare</button>
+      <button class="tab-btn" data-view="meta">Playrate by Rank</button>
+    </div>
+
+    <!-- Welcome / landing tab -->
+    <section id="view-welcome" class="view active">
+      <div class="welcome-wrap">
+        <h2 class="welcome-title">Champion Pool Designer</h2>
+        <p class="welcome-lead">Pick your role and add champions to your pool in the sidebar, then jump in:</p>
+        <div class="welcome-links">
+          <a href="https://machineloling.com/" target="_blank" rel="noopener noreferrer">machineloling.com</a>
+          <span class="sep">·</span>
+          <a href="https://x.com/machineloling" target="_blank" rel="noopener noreferrer">@machineloling on X</a>
+          <span class="sep">·</span>
+          <a href="https://ko-fi.com/machineloling" target="_blank" rel="noopener noreferrer">Support on Ko-fi</a>
+        </div>
+
+        <div class="welcome-group">
+          <h3>Explore your current pool</h3>
+          <div class="welcome-tiles">
+            <button class="welcome-tile" data-go="health">
+              <span class="wt-title">Pool Health</span>
+              <span class="wt-desc">One-page summary: how strong is your pool overall, in lane, in synergy, and how blindable is it?</span>
+            </button>
+            <button class="welcome-tile" data-go="matchup">
+              <span class="wt-title">Matchup Coverage</span>
+              <span class="wt-desc">Heatmap of your pool's win-rate edge against every common enemy champion, by role.</span>
+            </button>
+            <button class="welcome-tile" data-go="synergy">
+              <span class="wt-title">Synergy Coverage</span>
+              <span class="wt-desc">Heatmap of your pool's win-rate edge when paired with every common teammate, by role.</span>
+            </button>
+            <button class="welcome-tile" data-go="bans">
+              <span class="wt-title">Ban Recommender</span>
+              <span class="wt-desc">Which opponents are most worth banning given your specific pool — accounts for who you can actually counter.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="welcome-group">
+          <h3>Improve your pool</h3>
+          <div class="welcome-tiles">
+            <button class="welcome-tile" data-go="replacements">
+              <span class="wt-title">Replacement Finder</span>
+              <span class="wt-desc">Ranks every champion by how much they'd improve your pool if added or swapped in.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="welcome-group">
+          <h3>Build a pool from scratch</h3>
+          <div class="welcome-tiles">
+            <button class="welcome-tile" data-go="builder">
+              <span class="wt-title">Pool Builder</span>
+              <span class="wt-desc">Mark champions as "must keep" or "maybe", and the tool enumerates the best pools you can build.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="welcome-group">
+          <h3>Explore the meta</h3>
+          <div class="welcome-tiles">
+            <button class="welcome-tile" data-go="blindability">
+              <span class="wt-title">Blindability</span>
+              <span class="wt-desc">Which champions perform consistently against any opponent — i.e. safe blind picks — and which are polarized.</span>
+            </button>
+            <button class="welcome-tile" data-go="meta">
+              <span class="wt-title">Playrate by Rank</span>
+              <span class="wt-desc">Stacked bars of champion playrate per rank bracket (Silver → Master+) with Sankey ribbons connecting the same champion across brackets. Click champions to highlight them across all bars.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="welcome-group patch-notes">
+          <h3>Patch notes</h3>
+          <ul class="patch-notes-list">
+            <li>
+              <strong>v0.1 — Patch 16.9 — rank brackets</strong>
+              <span class="patch-notes-date">May 7, 2026</span>
+              <span class="patch-notes-desc">
+                Pick rates now ship for six rank brackets (Silver, Gold, Platinum,
+                Emerald, Diamond, Master+) on patch 16.9. The "Pick-rate patch"
+                control in the sidebar is now a <em>Rank bracket</em> selector —
+                switching it re-weights matchup/synergy scoring with that
+                bracket's playrates and reloads the strength-curve reference
+                distribution to match. Default is Diamond.
+                <br><br>
+                <em>Heads up:</em> historical patches (16.1–16.8) are no longer
+                selectable. The app now ships only the current patch's data
+                across the six rank brackets — past patches have been dropped.
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Coverage tab content (Matchup + Synergy share this) -->
+    <section id="view-coverage" class="view">
+      <div class="tabs-sub" id="role-tabs"></div>
+      <div id="stats-banner"></div>
+      <div id="heatmap"></div>
+      <div class="hm-key">
+        <span class="key-item"><b style="color:#111;background:#F7F7F7;padding:1px 4px;border-radius:2px;">+1.0</b> bold = your <b>top-X</b> best pool picks for that column</span>
+        <span class="key-item"><span style="color:rgba(180,180,180,0.7);">+0.3</span> faint = other pool members (context)</span>
+        <span class="key-item">Cell color = Δ pp (winrate delta)</span>
+        <span class="key-item">Bar above = top-X mean z per column (drives sort)</span>
+      </div>
+      <div id="topx-table"></div>
+      <div id="uncovered"></div>
+    </section>
+
+    <!-- Pool Health -->
+    <section id="view-health" class="view">
+      <div id="health-strength"></div>
+      <div id="health-equations" class="eq-box"></div>
+      <h3 class="section-h">Pool redundancy</h3>
+      <div id="health-redundancy-table"></div>
+      <div id="health-redundancy-heatmap"></div>
+    </section>
+
+    <!-- Blindability -->
+    <section id="view-blindability" class="view">
+      <div class="row-controls">
+        <label>Icon size: <span id="blind-icon-val">26 px</span>
+          <input id="blind-icon-size" type="range" min="20" max="80" step="2" value="26">
+        </label>
+      </div>
+      <div id="blind-scatter"></div>
+      <div id="blind-table"></div>
+    </section>
+
+    <!-- Ban Recommender -->
+    <section id="view-bans" class="view">
+      <div id="ban-equation" class="eq-box"></div>
+      <div id="ban-top-card"></div>
+      <div id="ban-tables-grid"></div>
+    </section>
+
+    <!-- Pool Builder -->
+    <section id="view-builder" class="view">
+      <div id="pb-equation" class="eq-box"></div>
+      <div class="builder-grid">
+        <div class="builder-controls">
+          <label>Definite keeps (must be in pool)
+            <div id="pb-definite-wrap" class="pool-input-wrap">
+              <div id="pb-definite-chips"></div>
+              <input id="pb-definite-search" type="text" placeholder="type to add…" autocomplete="off">
+              <div id="pb-definite-suggestions" class="pool-suggestions"></div>
+            </div>
+          </label>
+          <label>Maybe keeps (optional fillers)
+            <div id="pb-maybe-wrap" class="pool-input-wrap">
+              <div id="pb-maybe-chips"></div>
+              <input id="pb-maybe-search" type="text" placeholder="type to add…" autocomplete="off">
+              <div id="pb-maybe-suggestions" class="pool-suggestions"></div>
+            </div>
+          </label>
+          <label class="compact-label">Target pool size: <span id="pb-target-val">6</span>
+            <input id="pb-target" type="range" min="2" max="8" step="1" value="6">
+          </label>
+          <div id="pb-combo-count"></div>
+          <button id="pb-build" class="btn-primary">Build pools</button>
+        </div>
+        <div class="builder-results">
+          <div id="pb-selected-summary"></div>
+          <div id="pb-strength"></div>
+          <div class="row-controls" style="margin-top:8px;">
+            <label>Heatmap view
+              <select id="pb-view"></select>
+            </label>
+          </div>
+          <div id="pb-selected-hm"></div>
+          <div class="hm-key">
+            <span class="key-item"><b style="color:#111;background:#F7F7F7;padding:1px 4px;border-radius:2px;">+1.0</b> bold = top-X best pool picks</span>
+            <span class="key-item"><span style="color:rgba(180,180,180,0.7);">+0.3</span> faint = other pool members</span>
+            <span class="key-item">Cell color = Δ pp</span>
+          </div>
+          <h3 class="section-h">Ranked pools</h3>
+          <div id="pb-result-table"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Replacement Finder -->
+    <section id="view-replacements" class="view">
+      <div class="row-controls">
+        <label>Mode
+          <select id="repl-mode">
+            <option value="replace" selected>Replace one pool member</option>
+            <option value="add">Add to pool (no removal)</option>
+          </select>
+        </label>
+      </div>
+      <div id="repl-locked-wrap"></div>
+      <div id="repl-summary"></div>
+      <div id="repl-equation" class="eq-box"></div>
+      <div id="repl-strength"></div>
+      <div class="row-controls" style="margin-top:8px;">
+        <label>Heatmap view (new pool)
+          <select id="repl-view"></select>
+        </label>
+      </div>
+      <div id="repl-new-pool-hm"></div>
+      <div class="hm-key">
+        <span class="key-item"><b style="color:#111;background:#F7F7F7;padding:1px 4px;border-radius:2px;">+1.0</b> bold = top-X best pool picks</span>
+        <span class="key-item"><span style="color:rgba(180,180,180,0.7);">+0.3</span> faint = other pool members</span>
+        <span class="key-item">Cell color = Δ pp</span>
+      </div>
+      <h3 class="section-h">Ranked candidates <span style="color:#888;font-weight:normal;font-size:13px;">(click to preview — does not change your pool)</span></h3>
+      <div id="repl-table"></div>
+    </section>
+
+    <!-- Comparer (champion correlation explorer) -->
+    <section id="view-comparer" class="view">
+      <h2 style="color:#e0e0e0;margin-bottom:12px;">Individual Champ Compare</h2>
+      <div class="row-controls" style="gap:16px;flex-wrap:wrap;align-items:flex-end;">
+        <label>Champion
+          <div id="cmp-champ-wrap" class="pool-input-wrap" style="min-width:240px;">
+            <div id="cmp-champ-chip"></div>
+            <input id="cmp-champ-search" type="text" placeholder="type to change…" autocomplete="off">
+            <div id="cmp-champ-suggestions" class="pool-suggestions"></div>
+          </div>
+        </label>
+        <label>Sort by
+          <select id="cmp-sort">
+            <option value="total" selected>Total</option>
+            <option value="matchup">Matchup</option>
+            <option value="synergy">Synergy</option>
+          </select>
+        </label>
+        <label class="checkbox-label" style="margin-top:18px;">
+          <input id="cmp-deltas" type="checkbox">
+          <span>Show individual deltas</span>
+        </label>
+      </div>
+      <div id="cmp-info" style="margin:8px 0;font-size:14px;color:#d4d4d4;"></div>
+      <details class="cmp-explainer-plain" open style="background:#2a2a2a;border-radius:6px;padding:10px 14px;margin:10px 0 14px 0;font-size:12px;color:#bbb;">
+        <summary style="cursor:pointer;color:#d4d4d4;font-weight:bold;font-size:13px;">What each column means <span style="color:#888;font-weight:normal;">(click to collapse)</span></summary>
+        <div style="margin-top:10px;display:grid;grid-template-columns:130px 1fr;gap:8px 14px;line-height:1.5;">
+          <b style="color:#d4d4d4;align-self:start;">Total</b>
+          <span>Overall, how similar is this champion to the one you picked? +1 = nearly identical playstyle profile, 0 = unrelated, −1 = total opposite.</span>
+
+          <b style="color:#d4d4d4;align-self:start;">Matchup</b>
+          <span>Do these two champs <i>struggle into</i> the same enemies and <i>beat up</i> the same enemies? High = same kinds of opponents counter them and the same kinds of opponents feed them. Negative = one's strong matchup is the other's bad matchup.</span>
+
+          <b style="color:#d4d4d4;align-self:start;">Synergy</b>
+          <span>Do they like the same kinds of <i>teammates</i>? High = same partners boost both. Negative = the things that make one champ shine make the other worse.</span>
+
+          <b style="color:#c9a4d8;align-self:start;">Blind Δz</b>
+          <span>Is this champ <i>safer to blind-pick</i> than the one you picked? Positive = more reliable across the board (fewer hard counters). Negative = more polarized — bigger swings, more matchup-dependent.</span>
+
+          <b style="color:#009E73;align-self:start;">Both Strong</b>
+          <span>The top 3 matchups/teammates where <b>both</b> champs have a winrate edge. The cells where they both shine — pick either one into these.</span>
+
+          <b style="color:#D55E00;align-self:start;">Both Weak</b>
+          <span>The top 3 matchups/teammates where <b>both</b> champs lose winrate — their shared blind spots. If both your options struggle here, you need a third pick.</span>
+
+          <b style="color:#006D9E;align-self:start;">Most Different</b>
+          <span>The top 3 places these two champs <i>disagree</i> — one wins where the other loses. Useful for figuring out when to swap between them: if you're up against one of these matchups, the other champ is probably your better answer.</span>
+        </div>
+      </details>
+      <h3 class="section-h">Most Similar Champions</h3>
+      <div id="cmp-similar"></div>
+      <h3 class="section-h" style="margin-top:24px;">Most Different Champions</h3>
+      <div id="cmp-opposite"></div>
+      <details class="cmp-explainer-detailed" open style="background:#2a2a2a;border-radius:6px;padding:10px 14px;margin:18px 0 14px 0;font-size:12px;color:#bbb;">
+        <summary style="cursor:pointer;color:#d4d4d4;font-weight:bold;font-size:13px;">Column definitions — detailed <span style="color:#888;font-weight:normal;">(click to collapse)</span></summary>
+        <div style="margin-top:14px;display:grid;grid-template-columns:130px 1fr;gap:10px 14px;line-height:1.5;">
+
+          <b style="color:#d4d4d4;align-self:start;">Total</b>
+          <span>The average of the Matchup and Synergy correlation columns.</span>
+
+          <b style="color:#d4d4d4;align-self:start;">Matchup</b>
+          <span>Pearson correlation of the two champions' winrate-edge (Δ pp) vectors across every eligible opponent in all 5 roles. PR-weighted by opponent pick rate if the sidebar checkbox is on.</span>
+
+          <b style="color:#d4d4d4;align-self:start;">Synergy</b>
+          <span>Same correlation as Matchup, but over Δ pp with every eligible <b>partner</b> across the 4 other roles.</span>
+
+          <b style="color:#c9a4d8;align-self:start;">Blind Δz</b>
+          <span>The row champion's aggregate blindability z minus the selected champion's. Same z-scale as the Blindability tab; high = consistent across opponents and partners.</span>
+
+          <b style="color:#009E73;align-self:start;">Both Strong</b>
+          <span>Cells where both Δ pp values are positive, sorted by min(Δ_selected, Δ_row) descending — biggest mutual upside first.</span>
+
+          <b style="color:#D55E00;align-self:start;">Both Weak</b>
+          <span>Cells where both Δ pp values are negative, sorted by max(Δ_selected, Δ_row) ascending — the cells where both champs are <i>most</i> in the red.</span>
+
+          <b style="color:#006D9E;align-self:start;">Most Different</b>
+          <span>Cells where the signs of the two Δ pp values are opposite, sorted by |Δ_selected − Δ_row| descending.</span>
+
+        </div>
+        <div style="margin-top:12px;color:#888;font-size:11px;">
+          A "cell" in the last three columns is one matchup or synergy slot — e.g. <i>vs SUP_Yuumi</i> or <i>w/ ADC_Lucian</i>. Toggle <b>Show individual deltas</b> above the table to also see the raw winrate-edge numbers (the selected champ's, then the row champ's) inside each cell.
+        </div>
+        <div style="margin-top:8px;color:#888;font-size:11px;">
+          Driven by the live API — change PR floor, patch, or PR-weighted in
+          the sidebar and this updates. Correlation is over each champion's
+          delta-pp vector across every eligible matchup (or partner).
+          Blindability is the same aggregate z used by the Blindability tab.
+        </div>
+      </details>
+    </section>
+
+    <!-- Playrate by Rank -->
+    <section id="view-meta" class="view">
+      <h2 style="color:#e0e0e0;margin-bottom:6px;">Playrate by Rank — patch 16.9</h2>
+      <p style="color:#bbb;font-size:13px;margin:0 0 14px 0;line-height:1.5;">
+        Stacked bars showing the share of role games each champion
+        accounts for, side by side from Silver → Master+. Each bar sums
+        to 100% by construction (champ&nbsp;games / total role games per
+        bracket). Same-champion segments across consecutive ranks are
+        connected by tinted ribbons so you can trace a pick's popularity
+        across brackets.
+      </p>
+      <div id="meta-charts"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+  // Phase 5: data-source config consumed by src/api.js. Set baseUrl="" (or
+  // delete this block) to fall back to the bundled ./data/ artifacts.
+  window.POOL_DESIGNER_DATA = {
+    baseUrl: "https://machineloling.s3.amazonaws.com/artifacts",
+    defaultTier: "diamond",
+  };
+</script>
+<script type="module" src="src/main.js?v=10"></script>
+<script data-goatcounter="https://machineloling.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

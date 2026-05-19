@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>WASM smoke test</title>
+  <style>
+    body { font: 14px/1.4 ui-monospace, monospace; padding: 24px; max-width: 900px; }
+    .ok  { color: #0a7; }
+    .err { color: #c00; }
+    pre  { background: #f4f4f4; padding: 12px; border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+    .step { margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h2>WASM engine smoke test</h2>
+  <p>Loads <code>pkg/pool_designer_engine.js</code>, builds an Engine from <code>data/</code>,
+     runs a sample <code>coverage()</code> request, and checks the result against expectations.</p>
+  <div class="step" id="s1">1. import wasm-bindgen module: <em>pending</em></div>
+  <div class="step" id="s2">2. fetch matrices.bin / index.json / champions.json: <em>pending</em></div>
+  <div class="step" id="s3">3. construct Engine: <em>pending</em></div>
+  <div class="step" id="s4">4. call patches(): <em>pending</em></div>
+  <div class="step" id="s5">5. call coverage() with sample TOP-vs-TOP request: <em>pending</em></div>
+  <h3>Coverage result</h3>
+  <pre id="result">—</pre>
+
+  <script type="module">
+    const set = (id, html, ok = true) => {
+      const el = document.getElementById(id);
+      el.innerHTML = html;
+      el.className = 'step ' + (ok ? 'ok' : 'err');
+    };
+
+    try {
+      const mod = await import('./pkg/pool_designer_engine.js');
+      await mod.default();
+      set('s1', `1. import wasm-bindgen module: <strong>OK</strong> (engine v${mod.version()})`);
+
+      const t0 = performance.now();
+      const [matBuf, idxText, chText] = await Promise.all([
+        fetch('./data/matrices.bin').then(r => r.arrayBuffer()),
+        fetch('./data/index.json').then(r => r.text()),
+        fetch('./data/champions.json').then(r => r.text()),
+      ]);
+      const t1 = performance.now();
+      set('s2', `2. fetch matrices.bin / index.json / champions.json: <strong>OK</strong> ` +
+                `(matrices ${(matBuf.byteLength / 1024).toFixed(1)} KB, ` +
+                `index ${(idxText.length / 1024).toFixed(1)} KB, ` +
+                `champions ${(chText.length / 1024).toFixed(1)} KB, ` +
+                `took ${(t1 - t0).toFixed(0)} ms)`);
+
+      const matBytes = new Uint8Array(matBuf);
+      const t2 = performance.now();
+      const engine = new mod.Engine(matBytes, idxText, chText);
+      const t3 = performance.now();
+      set('s3', `3. construct Engine: <strong>OK</strong> (took ${(t3 - t2).toFixed(0)} ms)`);
+
+      const patches = engine.patches();
+      set('s4', `4. call patches(): <strong>OK</strong> (latest ${patches.latest}, ${patches.patches.length} patches)`);
+
+      // Sample coverage request: TOP champs Aatrox/Camille vs TOP opponents.
+      // (Picking common champs likely to exist in the CSV at the default PR floor.)
+      const t4 = performance.now();
+      const cov = engine.coverage({
+        my_role: 'TOP',
+        other_role: 'TOP',
+        mode: 'matchup',
+        pool: ['Aatrox', 'Camille', 'Darius', 'Garen', 'Jax'],
+        top_x: 1,
+        pr_floor: 0.0075,
+        shrink_alpha: 1.0,
+        pr_weighted: false,
+      });
+      const t5 = performance.now();
+      if (!cov) throw new Error('coverage() returned null');
+      set('s5', `5. call coverage() with sample TOP-vs-TOP request: <strong>OK</strong> ` +
+                `(${cov.rows.length} rows × ${cov.cols.length} cols, took ${(t5 - t4).toFixed(1)} ms)`);
+
+      // Display a compact summary
+      const summary = {
+        rows: cov.rows,
+        n_cols: cov.cols.length,
+        first_5_cols: cov.cols.slice(0, 5),
+        first_col_score_z: cov.col_score_z[0],
+        first_col_score_pp: cov.col_score_pp[0],
+        first_col_max_z: cov.col_max_z[0],
+        stats: cov.stats,
+        n_uncovered: cov.uncovered.length,
+        first_uncovered: cov.uncovered.slice(0, 3),
+      };
+      document.getElementById('result').textContent = JSON.stringify(summary, null, 2);
+    } catch (e) {
+      const el = document.querySelector('.step:not(.ok)') || document.getElementById('s1');
+      el.innerHTML += ` <strong>FAIL</strong>: ${e.stack || e.message || e}`;
+      el.className = 'step err';
+      document.getElementById('result').textContent = String(e.stack || e);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Allow one concurrent deploy; cancel queued runs but let in-progress finish
+# so a half-published Pages site can't happen.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  # Keep in lockstep with engine/Cargo.toml `wasm-bindgen = "=X.Y.Z"`.
+  # wasm-bindgen and wasm-bindgen-cli must match exactly — schema is
+  # unstable across minor versions.
+  WASM_BINDGEN_VERSION: "0.2.120"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (wasm32 target)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo registry + engine/target
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: engine
+          # Bust the cache when the bindgen version changes so a stale
+          # wasm-bindgen-cli binary can't poison the build.
+          key: wasm-bindgen-${{ env.WASM_BINDGEN_VERSION }}
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --version ${{ env.WASM_BINDGEN_VERSION }} --locked
+
+      - name: Build site (engine + frontend mirror)
+        run: bash build_pages.sh
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: deploy
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

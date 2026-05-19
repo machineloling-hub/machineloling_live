@@ -1,0 +1,38 @@
+[package]
+name = "pool_designer_engine"
+version = "0.1.0"
+edition = "2021"
+description = "WASM port of the Champion Pool Designer compute backend."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Pinned exactly. wasm-bindgen and wasm-bindgen-cli must match — schema is
+# unstable across minor versions. The CI workflow installs cli @ 0.2.120;
+# without this pin Cargo would resolve to the newest 0.2.x and the build
+# fails with "different bindgen format" at the wasm-bindgen step.
+wasm-bindgen = "=0.2.120"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+js-sys = "0.3"
+# `js` feature routes RNG calls to the browser's crypto API — required for
+# the monte-carlo paths once we port live_curves.py.
+getrandom = { version = "0.2", features = ["js"] }
+rand = "0.8"
+# ndarray gives us numpy-shaped float arrays. Keeping it lean — no BLAS
+# linkage, just the stdlib backend (matrices here are small, ~150x150).
+ndarray = "0.15"
+# float16 decoding (matrices.bin ships f16; we decode to f32 in memory).
+half = "2.4"
+# Index/champions JSON parsing happens once at startup. Per-request payloads
+# go through serde-wasm-bindgen instead, no JSON serialization in hot path.
+serde_json = "1"
+
+[profile.release]
+# Optimize for size first, speed second — wasm payload size matters more
+# than a few % runtime perf for the workloads we're porting.
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true

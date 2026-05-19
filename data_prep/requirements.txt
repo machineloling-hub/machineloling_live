@@ -1,0 +1,12 @@
+numpy
+pandas
+pyarrow
+scipy
+# S3 access for the refresh pipeline. Optional: only required when running
+# data_prep/refresh.py against S3 (not for the legacy pack_*.py scripts).
+boto3
+# Hierarchical-Bayes shrinkage in shrinkage.py. Pinned loosely; jaxlib must
+# match jax version per the JAX install matrix for your platform.
+numpyro>=0.13
+jax>=0.4
+jaxlib>=0.4
