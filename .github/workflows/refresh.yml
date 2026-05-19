@@ -36,13 +36,21 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: refresh-${{ github.event.inputs.tier || 'diamond' }}
-  cancel-in-progress: false
-
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # Skip non-matching tiers on manual dispatch; run all on schedule.
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.tier == matrix.tier
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        tier: [silver, gold, platinum, emerald, diamond, master_plus]
+    concurrency:
+      group: refresh-${{ matrix.tier }}
+      cancel-in-progress: false
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -50,7 +58,7 @@ jobs:
       S3_BUCKET: ${{ secrets.S3_BUCKET }}
       S3_PREFIX_RAW: ${{ secrets.S3_PREFIX_RAW || 'raw/feather/' }}
       S3_PREFIX_OUT: ${{ secrets.S3_PREFIX_OUT || 'artifacts/' }}
-      REFRESH_TIER: ${{ github.event.inputs.tier || 'diamond' }}
+      REFRESH_TIER: ${{ matrix.tier }}
       REFRESH_QUEUE: ranked_solo
       REFRESH_PATCH_RANGE: "16.1-16.5"
       REFRESH_REGIONS: "NA1,KR,EUW1"
