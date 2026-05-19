@@ -1,0 +1,86 @@
+name: Refresh artifacts
+
+# Pulls fresh feathers from S3, runs the incremental aggregation pipeline,
+# and uploads new versioned matrices.bin / index.json / champions.json.
+#
+# Two cadences:
+#   - "fast"  every 2h: aggregate + EB + pack + upload (skips hier-Bayes).
+#                       Reuses prior tick's hier columns from staged CSVs.
+#   - "full"  once nightly (06:00 UTC): runs hier-Bayes too.
+#
+# Requires repo secrets:
+#   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY  - bucket-rw IAM user.
+#   S3_BUCKET                                  - e.g. machineloling.
+# Optional secrets:
+#   S3_PREFIX_RAW, S3_PREFIX_OUT, AWS_REGION   - override defaults.
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"      # every 2h, UTC
+    - cron: "0 6 * * *"        # 06:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "fast | full"
+        required: true
+        default: "fast"
+        type: choice
+        options: [fast, full]
+      tier:
+        description: "Tier to refresh"
+        required: true
+        default: "diamond"
+        type: choice
+        options: [silver, gold, platinum, emerald, diamond, master_plus]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-${{ github.event.inputs.tier || 'diamond' }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-2' }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      S3_PREFIX_RAW: ${{ secrets.S3_PREFIX_RAW || 'raw/feather/' }}
+      S3_PREFIX_OUT: ${{ secrets.S3_PREFIX_OUT || 'artifacts/' }}
+      REFRESH_TIER: ${{ github.event.inputs.tier || 'diamond' }}
+      REFRESH_QUEUE: ranked_solo
+      REFRESH_PATCH_RANGE: "16.1-16.5"
+      REFRESH_REGIONS: "NA1,KR,EUW1"
+      PYTHONIOENCODING: "utf-8"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: pip install -r data_prep/requirements.txt
+
+      - name: Decide cadence
+        id: cadence
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "kind=${{ github.event.inputs.kind }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 6 * * *" ]; then
+            echo "kind=full" >> "$GITHUB_OUTPUT"
+          else
+            echo "kind=fast" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Refresh (fast - skip hier-Bayes)
+        if: steps.cadence.outputs.kind == 'fast'
+        run: python data_prep/refresh.py --skip hier
+
+      - name: Refresh (full - includes hier-Bayes)
+        if: steps.cadence.outputs.kind == 'full'
+        run: python data_prep/refresh.py
