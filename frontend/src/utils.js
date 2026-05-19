@@ -1,6 +1,7 @@
 // Champion Pool Designer — frontend.
 // One global `state`; one render() per tab. Sidebar control changes call refresh()
 // which fans out to the active tab's renderer.
+import { state } from "./state.js";
 
 const ROLES = ["TOP", "JUNGLE", "MID", "ADC", "SUP"];
 const CDRAGON_NAME_FIX = { "Wukong": "monkeyking" };
