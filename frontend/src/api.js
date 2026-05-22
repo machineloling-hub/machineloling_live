@@ -416,8 +416,15 @@ async function apiFetch(input, init) {
     const role = path.slice('/api/champions/'.length);
     const pr_floor = parseFloat(params.get('pr_floor') || '0.001');
     const patch = params.get('patch');
-    const source = (patch && _championsData.by_patch[patch] && _championsData.by_patch[patch][role])
+    // NB: by_patch[patch][role] may be present but empty (upstream data
+    // gap); empty arrays are truthy in JS, so check length explicitly
+    // and fall back to the default snapshot when the per-patch slice is
+    // missing or empty.
+    const perPatch = patch && _championsData.by_patch && _championsData.by_patch[patch]
       ? _championsData.by_patch[patch][role]
+      : null;
+    const source = (perPatch && perPatch.length)
+      ? perPatch
       : (_championsData.default[role] || []);
     // Sort by pick_rate desc and filter by floor — matches FastAPI behavior.
     data = source
