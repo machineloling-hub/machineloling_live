@@ -22,7 +22,7 @@ const champSlug = (n) =>
 const champIconUrl = (n) =>
   `https://cdn.communitydragon.org/latest/champion/${champSlug(n)}/square`;
 const champImg = (n, size = 18) =>
-  `<img src="${esc(champIconUrl(n))}" alt="" width="${size}" height="${size}" class="champ-icon" style="border-radius:3px;vertical-align:middle;">`;
+  `<img src="${esc(champIconUrl(n))}" alt="" width="${size}" height="${size}" class="champ-icon" style="vertical-align:middle;">`;
 
 // Hide broken champion icons without using inline event handlers (CSP-safe).
 // `error` events don't bubble, so we listen in the capture phase.

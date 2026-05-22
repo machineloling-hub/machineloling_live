@@ -587,7 +587,12 @@ button { font-family: inherit; }
   transition: background var(--dur-fast), border-color var(--dur-fast);
 }
 .pool-chip:hover { background: var(--surface-3); border-color: var(--border); }
-.pool-chip img { width: 20px; height: 20px; border-radius: 50%; }
+/* Default champion icon shape (used in tables, heatmap labels, comparer
+   tiles, etc.) is a soft-cornered square. Inside pool chips and the
+   sidebar role bar the icon is circular to match the rounded chip. */
+.champ-icon { border-radius: 3px; }
+.pool-chip img,
+.pool-chip .champ-icon { width: 20px; height: 20px; border-radius: 50%; }
 .pool-chip .x {
   cursor: pointer; color: var(--text-dim);
   padding: 0 4px;
