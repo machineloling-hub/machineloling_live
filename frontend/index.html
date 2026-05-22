@@ -11,15 +11,17 @@
   <aside id="sidebar">
     <h1>Champion Pool Designer</h1>
 
-    <label>Your role
-      <select id="role">
+    <div class="field">
+      <span class="field-label">Your role</span>
+      <div id="role-strip" class="role-strip" role="radiogroup" aria-label="Your role"></div>
+      <select id="role" class="visually-hidden" tabindex="-1" aria-hidden="true">
         <option value="TOP">TOP</option>
         <option value="JUNGLE">JUNGLE</option>
         <option value="MID">MID</option>
         <option value="ADC">ADC</option>
         <option value="SUP" selected>SUP</option>
       </select>
-    </label>
+    </div>
 
     <label>Your pool
       <div id="pool-input-wrap">
@@ -52,11 +54,13 @@
       </label>
     </fieldset>
 
-    <label>Rank bracket
-      <select id="patch"></select>
+    <div class="field">
+      <span class="field-label">Rank bracket</span>
+      <div id="rank-list" class="rank-list" role="radiogroup" aria-label="Rank bracket"></div>
+      <select id="patch" class="visually-hidden" tabindex="-1" aria-hidden="true"></select>
       <span class="hint" style="margin-left:0;">Patch 16.9. PR-weighted scoring + pick-rate floor use this bracket's playrates.</span>
       <span class="hint" style="margin-left:0;margin-top:4px;color:#888;">Matchup &amp; synergy Δ data comes from the cross-patch D+ 16.1–16.4 win-rate-corrected dataset, so those values are patch-invariant — only playrates change with the bracket above.</span>
-    </label>
+    </div>
 
     <label class="checkbox-label">
       <input id="pr-weighted" type="checkbox" checked>

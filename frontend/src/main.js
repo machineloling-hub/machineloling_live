@@ -1,5 +1,5 @@
 import { state } from "./state.js";
-import { $, $$, setStatus, ROLES, RANK_LABELS } from "./utils.js";
+import { $, $$, setStatus, ROLES, RANK_LABELS, RANK_COLORS, esc } from "./utils.js";
 import { apiFetch, loadChampionsFor, topNChampions } from "./api.js";
 import { makeMultiSelect, makeSingleSelect } from "./widgets/multiselect.js";
 import { refreshCoverage, renderRoleSubTabs } from "./views/coverage.js";
@@ -21,6 +21,72 @@ const SYNERGY_DEFAULT_PARTNER = {
 function defaultOtherRole(role, view) {
   if (view === "matchup") return role;
   return SYNERGY_DEFAULT_PARTNER[role] || ROLES.find((r) => r !== role);
+}
+
+// Position-icon slug map for the sidebar role strip. Same source as the
+// comparer's CMP_ROLE_ICON — Community Dragon's static lane glyphs.
+const ROLE_ICON_SLUG = { TOP: "top", JUNGLE: "jungle", MID: "middle", ADC: "bottom", SUP: "utility" };
+const ROLE_ICON_URL = (role) =>
+  `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-${ROLE_ICON_SLUG[role]}.png`;
+
+function renderRoleStrip() {
+  const strip = $("#role-strip");
+  if (!strip) return;
+  strip.innerHTML = ROLES.map((r) => `
+    <button type="button" class="role-tile${r === state.role ? " active" : ""}"
+            role="radio" aria-checked="${r === state.role}"
+            data-role="${r}" title="${r}" aria-label="${r}">
+      <img src="${esc(ROLE_ICON_URL(r))}" alt="">
+    </button>`).join("");
+  strip.querySelectorAll(".role-tile").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const v = btn.dataset.role;
+      if (v === state.role) return;
+      const sel = $("#role");
+      sel.value = v;
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  });
+}
+
+// Rank crest icon (Community Dragon static asset). master_plus → master crest.
+const RANK_CREST_URL = (rank) => {
+  const tier = rank === "master_plus" ? "master" : rank;
+  return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier}.png`;
+};
+
+function renderRankList() {
+  const list = $("#rank-list");
+  if (!list) return;
+  if (!state.patches || !state.patches.length) {
+    list.innerHTML = `<div class="rank-row" disabled><span class="rank-name">No rank data available</span></div>`;
+    return;
+  }
+  // Match the mockup's order: highest tier on top.
+  const ORDER = ["master_plus", "diamond", "emerald", "platinum", "gold", "silver"];
+  const sorted = [...state.patches].sort(
+    (a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)
+  );
+  list.innerHTML = sorted.map((p) => {
+    const label = RANK_LABELS[p] || p;
+    const color = RANK_COLORS[p] || "#d4d4d4";
+    return `
+      <button type="button" class="rank-row${p === state.patch ? " active" : ""}"
+              role="radio" aria-checked="${p === state.patch}"
+              data-patch="${esc(p)}">
+        <img src="${esc(RANK_CREST_URL(p))}" alt="">
+        <span class="rank-name" style="color:${color};">${esc(label)}</span>
+      </button>`;
+  }).join("");
+  list.querySelectorAll(".rank-row[data-patch]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const v = btn.dataset.patch;
+      if (v === state.patch) return;
+      const sel = $("#patch");
+      sel.value = v;
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  });
 }
 
 
@@ -82,6 +148,7 @@ async function init() {
     poolMS.renderChips(); pbDefMS.renderChips(); pbMayMS.renderChips();
     state.otherRole = defaultOtherRole(state.role, state.view);
     renderRoleSubTabs();
+    renderRoleStrip();
     refresh();
   });
 
@@ -239,8 +306,12 @@ async function init() {
     // simplest: clear the entire cache.
     state.champsByRole = {};
     await loadChampionsFor(state.role);
+    renderRankList();
     refresh();
   });
+
+  renderRoleStrip();
+  renderRankList();
 
   await loadChampionsFor(state.role);
   state.pool = topNChampions(state.role, 6);    // initial default pool
