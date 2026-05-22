@@ -141,7 +141,12 @@ impl DataStore {
         })
     }
 
-    /// Pick-rate map for a (role, patch) — patch-specific if available, else cross-patch default.
+    /// Pick-rate map for a (role, patch) — patch-specific if available
+    /// **and non-empty**, else cross-patch default. The empty-check
+    /// matters because `by_patch[patch][role]` can be present but empty
+    /// (upstream data gap — currently affects SUP for the latest patch);
+    /// returning that empty map would make every coverage / blindability
+    /// / pool-builder query come back empty for the role.
     /// Returns an empty map (the `_empty_pr` field) if `role` is missing
     /// entirely; this keeps WASM fault-tolerant against a malformed
     /// `champions.json` that omits a role, instead of trapping the whole engine.
@@ -149,7 +154,9 @@ impl DataStore {
         if let Some(p) = patch {
             if let Some(by_role) = self.pr_by_patch.get(p) {
                 if let Some(map) = by_role.get(role) {
-                    return map;
+                    if !map.is_empty() {
+                        return map;
+                    }
                 }
             }
         }
