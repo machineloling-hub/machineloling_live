@@ -32,6 +32,16 @@ function _escape(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 }
 
+function _slice(rank, role) {
+  // by_patch[rank][role] may be present but empty (upstream data gap for
+  // e.g. SUP at diamond); fall back to the per-role default in that case
+  // so the chart isn't blank.
+  const d = getChampionsData();
+  const per = d && d.by_patch && d.by_patch[rank] ? d.by_patch[rank][role] : null;
+  if (per && per.length) return per;
+  return (d && d.default && d.default[role]) || [];
+}
+
 function _initMetaSelectedForRole(role, ranks) {
   // Initialize this role's selection from the sidebar pool (intersected
   // with champs that actually appear in the role's data). Only runs once
@@ -42,9 +52,7 @@ function _initMetaSelectedForRole(role, ranks) {
   if (state.metaSelectedByRole[role] !== undefined) return;
   const inRole = new Set();
   for (const rank of ranks) {
-    for (const c of (getChampionsData().by_patch[rank]?.[role] || [])) {
-      inRole.add(c.champion);
-    }
+    for (const c of _slice(rank, role)) inRole.add(c.champion);
   }
   state.metaSelectedByRole[role] = new Set(
     (state.pool || []).filter((c) => inRole.has(c))
@@ -71,7 +79,7 @@ function refreshMeta() {
   // so the same champ shows the same number across ranks even after the
   // pick_rates are renormalized for visual stacking.
   const rows = ranks.map((rank) => {
-    const all = (getChampionsData().by_patch[rank] && getChampionsData().by_patch[rank][role]) || [];
+    const all = _slice(rank, role);
     const totalGames = all.reduce((s, c) => s + (c.games || 0), 0) || 1;
     const list = all
       .map((c) => ({

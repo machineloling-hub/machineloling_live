@@ -62,7 +62,7 @@ async function refreshBlindability() {
   const boxPadX = iconSizeX * 0.10;
   const boxPadY = iconSizeY * 0.10;
   const shapes = rows.filter((r) => r.in_pool).map((r) => ({
-    type: "rect", xref: "x", yref: "y",
+    type: "circle", xref: "x", yref: "y",
     x0: r.matchup_mean - iconSizeX / 2 - boxPadX,
     x1: r.matchup_mean + iconSizeX / 2 + boxPadX,
     y0: r.synergy_mean - iconSizeY / 2 - boxPadY,
@@ -110,7 +110,24 @@ async function refreshBlindability() {
     images, shapes,
   }, { displaylogo: false });
 
+  _attachBlindIconHover(scatterDiv);
+
   renderBlindTable(data);
+}
+
+// Delegate mouseenter on the icon images: bring the hovered icon to the
+// front of its SVG group so the scale-up glow isn't clipped by neighbors.
+// CSS handles the circular clip + scale + drop-shadow. Idempotent: safe to
+// call after every Plotly.react.
+function _attachBlindIconHover(div) {
+  if (div._blindHoverWired) return;
+  div._blindHoverWired = true;
+  div.addEventListener("mouseover", (e) => {
+    const img = e.target.closest("image");
+    if (!img || !div.contains(img)) return;
+    const parent = img.parentNode;
+    if (parent && parent.lastChild !== img) parent.appendChild(img);
+  }, true);
 }
 
 function renderBlindTable(data) {

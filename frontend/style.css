@@ -903,6 +903,22 @@ button { font-family: inherit; }
 }
 #health-redundancy-heatmap { margin-top: var(--s-6); }
 
+/* Blindability scatter: clip champion icons to circles and lift the
+   hovered icon (scale + glow). JS in views/blind.js raises the hovered
+   <image> to the end of its SVG group so it draws on top of neighbors. */
+#blind-scatter image {
+  clip-path: circle(50%);
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--dur-base) ease-out,
+              filter var(--dur-base) ease-out;
+}
+#blind-scatter image:hover {
+  transform: scale(1.8);
+  filter: drop-shadow(0 0 8px rgba(61, 217, 164, 0.85));
+}
+
 /* Heatmap key */
 .hm-key {
   display: flex; flex-wrap: wrap;
