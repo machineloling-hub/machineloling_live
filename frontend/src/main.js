@@ -1,5 +1,5 @@
 import { state } from "./state.js";
-import { $, $$, setStatus, ROLES, RANK_LABELS, RANK_COLORS, esc } from "./utils.js";
+import { $, $$, setStatus, ROLES, ROLE_ICON_URL, RANK_LABELS, RANK_COLORS, esc } from "./utils.js";
 import { apiFetch, loadChampionsFor, topNChampions } from "./api.js";
 import { makeMultiSelect, makeSingleSelect } from "./widgets/multiselect.js";
 import { refreshCoverage, renderRoleSubTabs } from "./views/coverage.js";
@@ -37,11 +37,6 @@ const VIEW_LABELS = {
   meta:         "Playrate by Rank",
 };
 
-// Position-icon slug map for the sidebar role strip. Same source as the
-// comparer's CMP_ROLE_ICON — Community Dragon's static lane glyphs.
-const ROLE_ICON_SLUG = { TOP: "top", JUNGLE: "jungle", MID: "middle", ADC: "bottom", SUP: "utility" };
-const ROLE_ICON_URL = (role) =>
-  `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-${ROLE_ICON_SLUG[role]}.png`;
 
 function renderRoleStrip() {
   const strip = $("#role-strip");

@@ -459,22 +459,29 @@ button { font-family: inherit; }
   box-shadow: none; transform: none;
 }
 
-/* ── Role icon strip (sidebar) ────────────────────────────────────────── */
+/* ── Role icon bar (sidebar + coverage sub-tabs) ──────────────────────── */
+/* Continuous segmented control: outer track + flush inner segments. */
 .role-strip {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
 }
 .role-tile {
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: var(--r-sm);
-  padding: 8px 0;
+  padding: 6px 0;
   cursor: pointer;
-  transition: background var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
+  transition: background var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
 }
 .role-tile img {
   width: 20px; height: 20px;
@@ -483,12 +490,11 @@ button { font-family: inherit; }
   pointer-events: none;
   transition: opacity var(--dur-fast), filter var(--dur-fast);
 }
-.role-tile:hover { background: var(--surface-2); border-color: var(--border); }
+.role-tile:hover { background: var(--surface-2); }
 .role-tile:hover img { opacity: 0.95; }
 .role-tile.active {
   background: var(--accent-soft);
-  border-color: transparent;
-  box-shadow: var(--shadow-glow);
+  box-shadow: inset 0 0 0 1px var(--accent-ring);
 }
 .role-tile.active img { opacity: 1; filter: brightness(2.2); }
 

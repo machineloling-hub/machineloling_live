@@ -1,6 +1,6 @@
 import { state } from "../state.js";
 import { apiFetch } from "../api.js";
-import { $, ROLES, esc, fmtSign, champImg, setStatus } from "../utils.js";
+import { $, ROLES, ROLE_ICON_URL, esc, fmtSign, champImg, setStatus } from "../utils.js";
 import { drawPoolHeatmap } from "../widgets/heatmap.js";
 
 
@@ -183,10 +183,17 @@ function renderRoleSubTabs() {
     : ROLES.filter((r) => r !== state.role);
   if (!opts.includes(state.otherRole)) state.otherRole = opts[0];
   const cont = $("#role-tabs");
+  cont.classList.add("role-strip");
+  cont.setAttribute("role", "radiogroup");
+  cont.setAttribute("aria-label", state.view === "matchup" ? "Opponent role" : "Partner role");
   cont.innerHTML = opts.map((r) => `
-    <button class="tab-btn ${r === state.otherRole ? "active" : ""}" data-role="${r}">${r}</button>
+    <button type="button" class="role-tile${r === state.otherRole ? " active" : ""}"
+            role="radio" aria-checked="${r === state.otherRole}"
+            data-role="${r}" title="${r}" aria-label="${r}">
+      <img src="${esc(ROLE_ICON_URL(r))}" alt="">
+    </button>
   `).join("");
-  cont.querySelectorAll(".tab-btn").forEach((b) =>
+  cont.querySelectorAll(".role-tile").forEach((b) =>
     b.addEventListener("click", () => {
       state.otherRole = b.dataset.role;
       renderRoleSubTabs();

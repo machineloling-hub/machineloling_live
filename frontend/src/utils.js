@@ -5,6 +5,11 @@ import { state } from "./state.js";
 
 const ROLES = ["TOP", "JUNGLE", "MID", "ADC", "SUP"];
 const CDRAGON_NAME_FIX = { "Wukong": "monkeyking" };
+// Lane position icon (Community Dragon static asset). ADC → "bottom",
+// SUP → "utility" — matches LoL's internal lane slugs.
+const ROLE_ICON_SLUG = { TOP: "top", JUNGLE: "jungle", MID: "middle", ADC: "bottom", SUP: "utility" };
+const ROLE_ICON_URL = (role) =>
+  `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-${ROLE_ICON_SLUG[role]}.png`;
 // Escape any string before splicing it into innerHTML. Champion names
 // today come from our pipeline and are constrained to [A-Za-z0-9'.& ],
 // but treat all dynamic values as untrusted to keep this resilient if a
@@ -138,7 +143,7 @@ const $$ = (s) => document.querySelectorAll(s);
 const setStatus = (m) => { $("#status").textContent = m || ""; };
 
 export {
-  ROLES, CDRAGON_NAME_FIX,
+  ROLES, CDRAGON_NAME_FIX, ROLE_ICON_URL,
   esc, champSlug, champIconUrl, champImg,
   MATCHUP_COLOR, SYNERGY_COLOR, BLIND_COLOR, TOTAL_COLOR, STRENGTH_LABEL_COLORS,
   renderScoreEquation,
