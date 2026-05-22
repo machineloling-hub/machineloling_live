@@ -169,8 +169,8 @@ function drawPoolHeatmap(div, opts) {
         text: text[i][j],
         showarrow: false,
         font: topXSet.has(`${i},${j}`)
-          ? { size: 10, color: "#111", weight: 700 }
-          : { size: 10, color: "rgba(60,60,60,0.55)" },
+          ? { size: 10, color: "#F1F4FB", weight: 700 }
+          : { size: 10, color: "rgba(230,234,242,0.45)" },
       });
     }
   }
