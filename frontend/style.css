@@ -312,7 +312,7 @@ button { font-family: inherit; }
   background: var(--accent-soft, var(--surface-2));
   border-color: var(--accent);
   color: var(--text);
-  transition: left var(--dur-fast) linear;
+  transition: none;
   white-space: nowrap;
 }
 
