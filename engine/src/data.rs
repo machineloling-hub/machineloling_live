@@ -48,13 +48,16 @@ pub struct PairMats {
     pub cols: Vec<String>,
     pub shrunk: Array2<f32>,
     pub raw: Array2<f32>,
+    #[allow(dead_code)]
     pub tau_rows: Vec<f32>,
+    #[allow(dead_code)]
     pub tau_cols: Vec<f32>,
 }
 
 pub struct DataStore {
     pub matchup: HashMap<String, HashMap<String, PairMats>>,
     pub synergy: HashMap<String, HashMap<String, PairMats>>,
+    #[allow(dead_code)]
     pub valid_champs: HashMap<String, Vec<String>>,
     /// Cross-patch overall pick-rate, from `individual_wr.csv`.
     pub pr_by_role: HashMap<String, HashMap<String, f32>>,

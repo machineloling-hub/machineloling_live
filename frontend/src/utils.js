@@ -78,11 +78,11 @@ function fmtSign(v, places = 2) {
   if (v == null || !isFinite(v)) return "—";
   return (v >= 0 ? "+" : "") + v.toFixed(places);
 }
-function tealOrangeBg(v, scale = 1.5, alpha = 0.7) {
+function tealOrangeBg(v, scale = 1.5, alpha = 0.55) {
   if (v == null || !isFinite(v)) return "transparent";
   const c = Math.max(-scale, Math.min(scale, v));
-  if (c >= 0) return `rgba(0,158,115,${(c / scale * alpha).toFixed(2)})`;
-  return `rgba(213,94,0,${(Math.abs(c) / scale * alpha).toFixed(2)})`;
+  if (c >= 0) return `rgba(61,217,164,${(c / scale * alpha).toFixed(2)})`;
+  return `rgba(224,123,74,${(Math.abs(c) / scale * alpha).toFixed(2)})`;
 }
 // orange = high (redundant), teal = low (complementary)
 function corrBg(v) {
@@ -91,6 +91,27 @@ function corrBg(v) {
   if (c >= 0) return `rgba(213,94,0,${(c * 0.85).toFixed(2)})`;
   return `rgba(0,158,115,${(Math.abs(c) * 0.85).toFixed(2)})`;
 }
+
+// Plotly theme — spread into every chart's `layout` so axes/fonts/bgs match
+// the CSS design tokens. Backgrounds are transparent so charts inherit the
+// surface of whatever .card / container they're placed in.
+const PLOTLY_THEME = {
+  paper_bgcolor: "rgba(0,0,0,0)",
+  plot_bgcolor:  "rgba(0,0,0,0)",
+  font:    { family: "Inter, -apple-system, BlinkMacSystemFont, sans-serif", color: "#9AA3B7", size: 11 },
+  hoverlabel: {
+    bgcolor: "#1A2236",
+    bordercolor: "rgba(255,255,255,0.10)",
+    font: { family: "Inter, sans-serif", color: "#E6EAF2", size: 11 },
+  },
+};
+const PLOTLY_AXIS = {
+  gridcolor:     "rgba(255,255,255,0.06)",
+  zerolinecolor: "rgba(255,255,255,0.10)",
+  linecolor:     "rgba(255,255,255,0.10)",
+  tickcolor:     "rgba(255,255,255,0.10)",
+  tickfont:      { color: "#9AA3B7", size: 10 },
+};
 
 const RANK_LABELS = {
   silver: "Silver",
@@ -124,5 +145,6 @@ export {
   HEATMAP_COLORS_9, plotlyColorscale, colorAt,
   fmtSign, tealOrangeBg, corrBg,
   RANK_LABELS, RANK_COLORS,
+  PLOTLY_THEME, PLOTLY_AXIS,
   $, $$, setStatus,
 };

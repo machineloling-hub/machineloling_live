@@ -67,7 +67,7 @@ async function refreshBlindability() {
     x1: r.matchup_mean + iconSizeX / 2 + boxPadX,
     y0: r.synergy_mean - iconSizeY / 2 - boxPadY,
     y1: r.synergy_mean + iconSizeY / 2 + boxPadY,
-    line: { color: "#009E73", width: 3 },
+    line: { color: "#3DD9A4", width: 3 },
     fillcolor: "rgba(0, 158, 115, 0.15)",
     layer: "below",
   }));
@@ -93,19 +93,19 @@ async function refreshBlindability() {
 
   Plotly.react(scatterDiv, traces, {
     width: PLOT_W, height: PLOT_H,
-    paper_bgcolor: "#1e1e1e", plot_bgcolor: "#1e1e1e",
-    font: { color: "#d4d4d4" },
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: { family: "Inter, sans-serif", color: "#E6EAF2" },
     margin: { l: 80, r: 30, t: 60, b: 80 },
     title: { text: `${state.role} — blindability map`, font: { size: 16, color: BLIND_COLOR } },
     xaxis: {
       range: xlim, title: { text: "Matchup blindability z (→ better vs random opponent)", font: { color: "#e6c978" } },
       zeroline: true, zerolinecolor: "#555",
-      gridcolor: "#333", tickfont: { color: "#e6c978" },
+      gridcolor: "rgba(255,255,255,0.06)", tickfont: { color: "#e6c978" },
     },
     yaxis: {
       range: ylim, title: { text: "Synergy blindability z (↑ better with random partner)", font: { color: "#7fc0e8" } },
       zeroline: true, zerolinecolor: "#555",
-      gridcolor: "#333", tickfont: { color: "#7fc0e8" },
+      gridcolor: "rgba(255,255,255,0.06)", tickfont: { color: "#7fc0e8" },
     },
     images, shapes,
   }, { displaylogo: false });

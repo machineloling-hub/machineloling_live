@@ -12,9 +12,7 @@
 //!    matches the static explorer's convention).
 //! 4. Look up B's aggregate blindability z from `blind_stats`.
 
-use std::collections::HashMap;
-
-use ndarray::{s, Array1, Array2, Axis};
+use ndarray::{s, Array1, Array2};
 use serde::{Deserialize, Serialize};
 
 use super::blind::{blind_stats, blind_z_lookup};

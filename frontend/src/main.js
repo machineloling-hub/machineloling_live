@@ -23,6 +23,20 @@ function defaultOtherRole(role, view) {
   return SYNERGY_DEFAULT_PARTNER[role] || ROLES.find((r) => r !== role);
 }
 
+// Friendly labels shown in the topbar crumb when each tab is active.
+const VIEW_LABELS = {
+  welcome:      "Welcome",
+  health:       "Pool Health",
+  matchup:      "Matchup Coverage",
+  synergy:      "Synergy Coverage",
+  bans:         "Ban Recommender",
+  replacements: "Replacement Finder",
+  builder:      "Pool Builder",
+  blindability: "Blindability",
+  comparer:     "Individual Champ Compare",
+  meta:         "Playrate by Rank",
+};
+
 // Position-icon slug map for the sidebar role strip. Same source as the
 // comparer's CMP_ROLE_ICON — Community Dragon's static lane glyphs.
 const ROLE_ICON_SLUG = { TOP: "top", JUNGLE: "jungle", MID: "middle", ADC: "bottom", SUP: "utility" };
@@ -97,6 +111,9 @@ function setActiveView(view) {
   const isCov = view === "matchup" || view === "synergy";
   const sectionId = isCov ? "view-coverage" : `view-${view}`;
   $$(".view").forEach((s) => s.classList.toggle("active", s.id === sectionId));
+  // Mirror the active view label into the sticky topbar (aria-live=polite).
+  const titleEl = document.getElementById("topbar-title-text");
+  if (titleEl) titleEl.textContent = VIEW_LABELS[view] || view;
   if (isCov) {
     state.otherRole = defaultOtherRole(state.role, view);
     renderRoleSubTabs();
@@ -126,6 +143,22 @@ async function refresh() {
 
 // ──────────────────────────────────────────────────────────────────────────
 async function init() {
+  // Restore persisted sidebar collapse state (set before any tabs render so
+  // the shell doesn't visually jump on first paint).
+  const shell = document.getElementById("app");
+  if (shell) {
+    const saved = (typeof localStorage !== "undefined" && localStorage.getItem("sidebar")) || "expanded";
+    shell.dataset.sidebar = saved === "collapsed" ? "collapsed" : "expanded";
+  }
+  const sidebarToggle = document.getElementById("sidebar-toggle");
+  if (sidebarToggle && shell) {
+    sidebarToggle.addEventListener("click", () => {
+      const next = shell.dataset.sidebar === "collapsed" ? "expanded" : "collapsed";
+      shell.dataset.sidebar = next;
+      try { localStorage.setItem("sidebar", next); } catch (_) { /* private mode */ }
+    });
+  }
+
   // Top tabs
   $$(".tabs-top .tab-btn").forEach((b) =>
     b.addEventListener("click", () => { setActiveView(b.dataset.view); refresh(); })

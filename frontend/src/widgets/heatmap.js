@@ -184,7 +184,7 @@ function drawPoolHeatmap(div, opts) {
       text: `z = ${threshold.toFixed(1)}`,
       showarrow: false,
       textangle: -90,
-      font: { size: 11, color: "#e0a07a", weight: 700 },
+      font: { size: 11, color: "#E6C978", weight: 700 },
       yanchor: "top",
       yshift: -15,
     });
@@ -194,7 +194,7 @@ function drawPoolHeatmap(div, opts) {
       type: "line", xref: "x", yref: "paper",
       x0: gapJ, x1: gapJ,
       y0: 0, y1: heatTopFrac,
-      line: { color: "#e0a07a", width: 2, dash: "dash" },
+      line: { color: "#E6C978", width: 2, dash: "dash" },
       layer: "above",
     });
   }
@@ -215,8 +215,8 @@ function drawPoolHeatmap(div, opts) {
       hovertemplate: "<b>%{customdata}</b><br>Δ: %{z:.2f} pp<extra></extra>",
       xgap: 1, ygap: 1,
       colorbar: {
-        title: { text: "Δ pp", side: "top", font: { color: "#d4d4d4" } },
-        tickfont: { color: "#d4d4d4" },
+        title: { text: "Δ pp", side: "top", font: { color: "#E6EAF2" } },
+        tickfont: { color: "#E6EAF2" },
         len: 0.5, y: heatTopFrac / 2,
         thickness: 14, xpad: 4,
       },
@@ -230,7 +230,7 @@ function drawPoolHeatmap(div, opts) {
     traces.push({
       type: "bar",
       x: dCols.map((_, j) => j), y: dBarZ,
-      marker: { color: barColors, line: { color: "#222", width: 0.5 } },
+      marker: { color: barColors, line: { color: "rgba(255,255,255,0.10)", width: 0.5 } },
       hovertemplate: "%{customdata}<br>" + barLabel + ": <b>%{y:.2f}</b><extra></extra>",
       customdata: dCols.map((c) => c || ""),
       xaxis: "x2", yaxis: "y2", showlegend: false,
@@ -241,7 +241,7 @@ function drawPoolHeatmap(div, opts) {
         type: "line", xref: "x2", yref: "y2",
         x0: -0.5, x1: nD - 0.5,
         y0: threshold, y1: threshold,
-        line: { color: "#e0a07a", width: 2, dash: "dash" },
+        line: { color: "#E6C978", width: 2, dash: "dash" },
         layer: "above",
       });
     }
@@ -252,7 +252,7 @@ function drawPoolHeatmap(div, opts) {
     traces.push({
       type: "bar",
       x: dCols.map((_, j) => j), y: prPct,
-      marker: { color: "#7ea1c7", line: { color: "#222", width: 0.5 } },
+      marker: { color: "#7FC0E8", line: { color: "rgba(255,255,255,0.10)", width: 0.5 } },
       hovertemplate: "%{customdata}<br>PR: <b>%{y:.1f}%</b><extra></extra>",
       customdata: dCols.map((c) => c || ""),
       xaxis: "x3", yaxis: "y3", showlegend: false,
@@ -261,15 +261,15 @@ function drawPoolHeatmap(div, opts) {
 
   const layout = {
     width: plotW, height: plotH,
-    paper_bgcolor: "#1e1e1e", plot_bgcolor: "#1e1e1e",
-    font: { color: "#d4d4d4" },
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: { family: "Inter, sans-serif", color: "#E6EAF2" },
     margin,
     showlegend: false,
     xaxis: {
       tickvals: dCols.map((_, j) => j),
       ticktext: xLabels,
       tickangle: 90,
-      tickfont: { size: 11, color: "#d4d4d4" },
+      tickfont: { size: 11, color: "#E6EAF2" },
       side: "bottom",
       automargin: false,
       anchor: "y",
@@ -283,7 +283,7 @@ function drawPoolHeatmap(div, opts) {
       ticktext: yLabels,
       autorange: false,
       range: [rows.length - 0.5, -0.5],
-      tickfont: { size: 13, color: "#d4d4d4" },
+      tickfont: { size: 13, color: "#E6EAF2" },
       automargin: false,
       anchor: "x",
       domain: [0, heatTopFrac],
@@ -310,9 +310,9 @@ function drawPoolHeatmap(div, opts) {
     const yMax = Math.max(threshold ?? 0.5, zMax) + 0.15;
     layout.yaxis2 = {
       anchor: "x2", domain: [barBottomFrac, barTopFrac],
-      title: { text: barLabel, font: { size: 10, color: "#aaa" } },
-      tickfont: { size: 9, color: "#aaa" },
-      gridcolor: "#333", zerolinecolor: "#666",
+      title: { text: barLabel, font: { size: 10, color: "#9AA3B7" } },
+      tickfont: { size: 9, color: "#9AA3B7" },
+      gridcolor: "rgba(255,255,255,0.06)", zerolinecolor: "rgba(255,255,255,0.12)",
       range: [yMin, yMax],
     };
   }
@@ -324,9 +324,9 @@ function drawPoolHeatmap(div, opts) {
     };
     layout.yaxis3 = {
       anchor: "x3", domain: [prBarBottomFrac, 1],
-      title: { text: "PR %", font: { size: 10, color: "#aaa" } },
-      tickfont: { size: 9, color: "#aaa" },
-      gridcolor: "#333", zerolinecolor: "#666",
+      title: { text: "PR %", font: { size: 10, color: "#9AA3B7" } },
+      tickfont: { size: 9, color: "#9AA3B7" },
+      gridcolor: "rgba(255,255,255,0.06)", zerolinecolor: "rgba(255,255,255,0.12)",
     };
   }
 
@@ -342,8 +342,8 @@ function drawPoolHeatmap(div, opts) {
       xanchor: "right", yanchor: "middle",
       xshift: -78, // clears the rotated y-axis label (extra padding so PR % side also clears)
       showarrow: false,
-      font: { size: 11, color: "#7fc8a9" },
-      bgcolor: "rgba(42,42,42,0.9)", bordercolor: "#3f3f3f",
+      font: { size: 11, color: "#6FE2B5" },
+      bgcolor: "rgba(26,34,54,0.95)", bordercolor: "rgba(255,255,255,0.10)",
       borderpad: 3, borderwidth: 1,
       hovertext:
         "<b>Top-" + (top_x || "X") + " z</b> = how strong your pool's " +
@@ -363,8 +363,8 @@ function drawPoolHeatmap(div, opts) {
       xanchor: "right", yanchor: "middle",
       xshift: -78,
       showarrow: false,
-      font: { size: 11, color: "#7fc8a9" },
-      bgcolor: "rgba(42,42,42,0.9)", bordercolor: "#3f3f3f",
+      font: { size: 11, color: "#6FE2B5" },
+      bgcolor: "rgba(26,34,54,0.95)", bordercolor: "rgba(255,255,255,0.10)",
       borderpad: 3, borderwidth: 1,
       hovertext:
         "<b>PR %</b> = how often this opponent is picked in this role at the " +

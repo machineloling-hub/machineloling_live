@@ -289,7 +289,7 @@ function renderRedundancyHeatmap(rd) {
       customdata: labels.map((r) => labels.map((c) => `${r} ↔ ${c}`)),
       hovertemplate: "<b>%{customdata}</b><br>r: %{z:.3f}<extra></extra>",
       xgap: 2, ygap: 2,
-      colorbar: { title: { text: "Pearson r" }, tickfont: { color: "#d4d4d4" }, len: 0.6 },
+      colorbar: { title: { text: "Pearson r" }, tickfont: { family: "Inter, sans-serif", color: "#E6EAF2" }, len: 0.6 },
       xaxis: "x", yaxis: "y",
     },
   ];
@@ -298,7 +298,7 @@ function renderRedundancyHeatmap(rd) {
     traces.push({
       type: "scatter", mode: "lines",
       x: rowDendroX, y: rowDendroY,
-      line: { color: "#aaa", width: 1.5 },
+      line: { color: "#9AA3B7", width: 1.5 },
       hoverinfo: "skip", showlegend: false,
       xaxis: "x", yaxis: "y",
     });
@@ -306,7 +306,7 @@ function renderRedundancyHeatmap(rd) {
     traces.push({
       type: "scatter", mode: "lines",
       x: colDendroX, y: colDendroY,
-      line: { color: "#aaa", width: 1.5 },
+      line: { color: "#9AA3B7", width: 1.5 },
       hoverinfo: "skip", showlegend: false,
       xaxis: "x2", yaxis: "y2",
     });
@@ -314,14 +314,14 @@ function renderRedundancyHeatmap(rd) {
 
   const layout = {
     width: plotW, height: plotH,
-    paper_bgcolor: "#1e1e1e", plot_bgcolor: "#1e1e1e",
-    font: { color: "#d4d4d4" },
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: { family: "Inter, sans-serif", color: "#E6EAF2" },
     margin,
     showlegend: false,
     xaxis: {
       tickvals: labels.map((_, i) => i), ticktext: labels,
       tickangle: 90, side: "bottom",
-      tickfont: { size: 13, color: "#d4d4d4" },
+      tickfont: { size: 13, color: "#E6EAF2" },
       automargin: false, anchor: "y",
       range: [xRangeMin, n - 0.5],
       ticklen: ICON + COL_ICON_PAD + 2,
@@ -330,7 +330,7 @@ function renderRedundancyHeatmap(rd) {
     yaxis: {
       tickvals: labels.map((_, i) => i), ticktext: labels,
       autorange: false, range: [yRangeMax, -0.5],
-      tickfont: { size: 14, color: "#d4d4d4" },
+      tickfont: { size: 14, color: "#E6EAF2" },
       automargin: false, anchor: "x",
       domain: [0, yaxisFrac],
       ticklen: 4,
@@ -338,7 +338,7 @@ function renderRedundancyHeatmap(rd) {
     },
     images,
     title: { text: "Pool profile correlation — dendrogram-ordered (green = redundant, orange = complementary)",
-             font: { color: "#e0e0e0", size: 13 }, x: 0.5, y: 0.995 },
+             font: { color: "#E6EAF2", size: 13 }, x: 0.5, y: 0.995 },
   };
   if (segs.length) {
     // Top column dendrogram strip

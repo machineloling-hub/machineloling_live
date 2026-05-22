@@ -2,14 +2,49 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0B0F19">
 <title>Champion Pool Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
-<div id="app">
+<div id="app" class="app-shell" data-sidebar="expanded">
+  <header id="topbar">
+    <button id="sidebar-toggle" class="icon-btn" aria-label="Toggle sidebar" title="Toggle sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <div class="topbar-brand">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span class="brand-name">
+        Pool Designer
+        <span class="brand-sub">Patch 16.9</span>
+      </span>
+    </div>
+    <div class="topbar-divider" aria-hidden="true"></div>
+    <div id="topbar-title" aria-live="polite">
+      <span class="crumb">View ·</span>
+      <span id="topbar-title-text">Welcome</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <nav class="topbar-links" aria-label="Author links">
+      <a href="https://machineloling.com/" target="_blank" rel="noopener noreferrer">machineloling.com</a>
+      <span class="sep" aria-hidden="true">·</span>
+      <a href="https://x.com/machineloling" target="_blank" rel="noopener noreferrer">@machineloling</a>
+      <span class="sep" aria-hidden="true">·</span>
+      <a href="https://ko-fi.com/machineloling" target="_blank" rel="noopener noreferrer">Ko-fi</a>
+    </nav>
+  </header>
   <aside id="sidebar">
-    <h1>Champion Pool Designer</h1>
+    <h1>Controls</h1>
 
     <div class="field">
       <span class="field-label">Your role</span>
@@ -413,7 +448,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=10"></script>
+<script type="module" src="src/main.js?v=11"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>

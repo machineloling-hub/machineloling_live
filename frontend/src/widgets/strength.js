@@ -103,7 +103,7 @@ function _drawStrengthMiniSigma(div, slot, baseSig, baseColor, newSig, newColor)
   const mean = slot[0], sd = slot[1], mn = slot[2], mx = slot[3];
   if (!(sd > 0)) {
     Plotly.purge(div);
-    div.innerHTML = '<div style="color:#888;font-size:10px;text-align:center;padding:30px 0;">no data</div>';
+    div.innerHTML = '<div style="color:#6B7390;font-size:10px;text-align:center;padding:30px 0;">no data</div>';
     return;
   }
   const HIST_OFFSET = 4 + 21;
@@ -122,12 +122,12 @@ function _drawStrengthMiniSigma(div, slot, baseSig, baseColor, newSig, newColor)
   const yMax = Math.max(...ys) * 1.15 || 0.1;
   const shapes = [
     { type: "line", x0: 0, x1: 0, y0: 0, y1: yMax,
-      line: { color: "#888", width: 1, dash: "dot" } },
+      line: { color: "#6B7390", width: 1, dash: "dot" } },
   ];
   if (baseSig != null && isFinite(baseSig)) {
     shapes.push({
       type: "line", x0: baseSig, x1: baseSig, y0: 0, y1: yMax,
-      line: { color: "#fff", width: 2, dash: "dash" },
+      line: { color: "#E6EAF2", width: 2, dash: "dash" },
     });
   }
   if (newSig != null && isFinite(newSig)) {
@@ -144,10 +144,10 @@ function _drawStrengthMiniSigma(div, slot, baseSig, baseColor, newSig, newColor)
   Plotly.react(div, traces, {
     width: 250, height: 110,
     margin: { l: 8, r: 8, t: 8, b: 18 },
-    paper_bgcolor: "#1e1e1e", plot_bgcolor: "#1e1e1e",
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
     xaxis: {
       range: [xLo - xPad, xHi + xPad],
-      tickfont: { size: 9, color: "#888" }, gridcolor: "#2a2a2a",
+      tickfont: { size: 9, color: "#9AA3B7" }, gridcolor: "rgba(255,255,255,0.06)",
       zeroline: false, showline: false, ticks: "outside", nticks: 5,
       ticksuffix: "σ",
     },
@@ -167,7 +167,7 @@ function _drawStrengthMini(div, slot, userScore, color, newScore = null, newColo
   const mean = slot[0], sd = slot[1], mn = slot[2], mx = slot[3];
   if (!(sd > 0)) {
     Plotly.purge(div);
-    div.innerHTML = '<div style="color:#888;font-size:10px;text-align:center;padding:30px 0;">no data</div>';
+    div.innerHTML = '<div style="color:#6B7390;font-size:10px;text-align:center;padding:30px 0;">no data</div>';
     return;
   }
   const HIST_OFFSET = 4 + 21;
@@ -189,7 +189,7 @@ function _drawStrengthMini(div, slot, userScore, color, newScore = null, newColo
   // Mean line at 0σ.
   const shapes = [
     { type: "line", x0: 0, x1: 0, y0: 0, y1: yMax,
-      line: { color: "#888", width: 1, dash: "dot" } },
+      line: { color: "#6B7390", width: 1, dash: "dot" } },
   ];
   const userSig = (userScore != null && isFinite(userScore)) ? (userScore - mean) / sd : null;
   const newSig  = (newScore  != null && isFinite(newScore))  ? (newScore  - mean) / sd : null;
@@ -197,7 +197,7 @@ function _drawStrengthMini(div, slot, userScore, color, newScore = null, newColo
     const dashed = newSig != null;
     shapes.push({
       type: "line", x0: userSig, x1: userSig, y0: 0, y1: yMax,
-      line: { color: "#fff", width: 2, dash: dashed ? "dash" : undefined },
+      line: { color: "#E6EAF2", width: 2, dash: dashed ? "dash" : undefined },
     });
   }
   if (newSig != null) {
@@ -214,10 +214,10 @@ function _drawStrengthMini(div, slot, userScore, color, newScore = null, newColo
   Plotly.react(div, traces, {
     width: 250, height: 110,
     margin: { l: 8, r: 8, t: 8, b: 18 },
-    paper_bgcolor: "#1e1e1e", plot_bgcolor: "#1e1e1e",
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
     xaxis: {
       range: [xLo - xPad, xHi + xPad],
-      tickfont: { size: 9, color: "#888" }, gridcolor: "#2a2a2a",
+      tickfont: { size: 9, color: "#9AA3B7" }, gridcolor: "rgba(255,255,255,0.06)",
       zeroline: false, showline: false, ticks: "outside", nticks: 5,
       ticksuffix: "σ",
     },
