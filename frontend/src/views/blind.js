@@ -115,19 +115,37 @@ async function refreshBlindability() {
   renderBlindTable(data);
 }
 
-// Delegate mouseenter on the icon images: bring the hovered icon to the
-// front of its SVG group so the scale-up glow isn't clipped by neighbors.
-// CSS handles the circular clip + scale + drop-shadow. Idempotent: safe to
-// call after every Plotly.react.
+// Plotly's hover overlay sits above the imagelayer and swallows mouse
+// events, so CSS :hover on the <image> elements never fires. Instead we
+// listen to Plotly's plotly_hover / plotly_unhover on the invisible
+// scatter trace and toggle a class on the matching <image>, also
+// re-appending it to its parent group so it draws on top.
 function _attachBlindIconHover(div) {
+  // Plotly emits <image> elements in the same order as layout.images,
+  // which mirrors the `rows` array — index = pointIndex.
   if (div._blindHoverWired) return;
   div._blindHoverWired = true;
-  div.addEventListener("mouseover", (e) => {
-    const img = e.target.closest("image");
-    if (!img || !div.contains(img)) return;
-    const parent = img.parentNode;
-    if (parent && parent.lastChild !== img) parent.appendChild(img);
-  }, true);
+  div.on("plotly_hover", (ev) => {
+    const pt = ev && ev.points && ev.points[0];
+    if (!pt) return;
+    const imgs = div.querySelectorAll(".imagelayer image");
+    const img = imgs[pt.pointIndex];
+    if (!img) return;
+    if (div._blindHovered && div._blindHovered !== img) {
+      div._blindHovered.classList.remove("hovered");
+    }
+    img.classList.add("hovered");
+    div._blindHovered = img;
+    if (img.parentNode && img.parentNode.lastChild !== img) {
+      img.parentNode.appendChild(img);
+    }
+  });
+  div.on("plotly_unhover", () => {
+    if (div._blindHovered) {
+      div._blindHovered.classList.remove("hovered");
+      div._blindHovered = null;
+    }
+  });
 }
 
 function renderBlindTable(data) {
