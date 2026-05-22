@@ -280,7 +280,9 @@ button { font-family: inherit; }
   font-size: var(--fs-body);
 }
 
-/* Slider value-pill convention: <span> right after the slider label */
+/* Slider value-pill convention: <span> right after the slider label.
+   For sliders, the pill is upgraded to a floating bubble that tracks the
+   thumb (positioned via inline `left` set in main.js). */
 #sidebar label > span:not(.hint) {
   display: inline-block;
   margin-left: var(--s-1);
@@ -292,6 +294,26 @@ button { font-family: inherit; }
   font-variant-numeric: tabular-nums;
   font-size: var(--fs-xs);
   color: var(--text);
+}
+/* Slider rows: label-text on row 1, floating value bubble above the
+   thumb, slider on row 2, hint below. */
+#sidebar label:has(> input[type="range"]) { position: relative; }
+#sidebar label:has(> input[type="range"]) > input[type="range"] {
+  margin-top: 28px;
+}
+#sidebar label > span.slider-bubble {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  margin-left: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 2;
+  background: var(--accent-soft, var(--surface-2));
+  border-color: var(--accent);
+  color: var(--text);
+  transition: left var(--dur-fast) linear;
+  white-space: nowrap;
 }
 
 #sidebar select,

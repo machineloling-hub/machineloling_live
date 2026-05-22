@@ -69,6 +69,42 @@ const RANK_CREST_URL = (rank) => {
   return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier}.png`;
 };
 
+// --- Slider value bubbles: position the value pill above the thumb ---
+// Each sidebar slider has a paired <span id="<sliderId>-val"> that displays
+// the current value. We upgrade it to a floating bubble whose `left` is
+// kept in sync with the thumb position on input / resize.
+const _SLIDER_BUBBLES = [];
+function _positionBubble(sl, bubble) {
+  const min = parseFloat(sl.min) || 0;
+  const max = parseFloat(sl.max);
+  const v = parseFloat(sl.value);
+  if (!isFinite(max) || max <= min) return;
+  const pct = Math.min(1, Math.max(0, (v - min) / (max - min)));
+  const w = sl.clientWidth;
+  if (!w) return;
+  const thumb = 14; // matches CSS thumb width
+  const px = (thumb / 2) + pct * (w - thumb);
+  bubble.style.left = px + "px";
+}
+function _repositionSliderBubbles() {
+  for (const [sl, bubble] of _SLIDER_BUBBLES) _positionBubble(sl, bubble);
+}
+function _initSliderBubbles() {
+  const sliders = document.querySelectorAll('#sidebar input[type="range"]');
+  sliders.forEach((sl) => {
+    const bubble = document.getElementById(sl.id + "-val");
+    if (!bubble) return;
+    bubble.classList.add("slider-bubble");
+    _SLIDER_BUBBLES.push([sl, bubble]);
+    const update = () => _positionBubble(sl, bubble);
+    sl.addEventListener("input", update);
+    sl.addEventListener("change", update);
+    // Position once layout has settled (fonts/icons may shift width).
+    requestAnimationFrame(() => requestAnimationFrame(update));
+  });
+  window.addEventListener("resize", _repositionSliderBubbles);
+}
+
 function renderRankList() {
   const list = $("#rank-list");
   if (!list) return;
@@ -156,8 +192,13 @@ async function init() {
       const next = shell.dataset.sidebar === "collapsed" ? "expanded" : "collapsed";
       shell.dataset.sidebar = next;
       try { localStorage.setItem("sidebar", next); } catch (_) { /* private mode */ }
+      // Sidebar width change → reposition slider bubbles after the
+      // layout settles.
+      requestAnimationFrame(() => requestAnimationFrame(_repositionSliderBubbles));
     });
   }
+
+  _initSliderBubbles();
 
   // Top tabs
   $$(".tabs-top .tab-btn").forEach((b) =>
