@@ -145,6 +145,16 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 const setStatus = (m) => { $("#status").textContent = m || ""; };
 
+// Render a small "(?)" glyph with a themed hover/focus tooltip carrying the
+// technical detail. Keeps headline copy short while leaving the math /
+// definitions one hover away. Tip text must be plain text (no HTML).
+//   pos = "center" | "left" | "right"  (anchors the bubble)
+function infoTip(tip, pos = "center") {
+  const cls = pos === "left" ? " tip-left" : pos === "right" ? " tip-right" : "";
+  const safe = esc(tip).replace(/"/g, "&quot;");
+  return `<span class="info-tip${cls}" tabindex="0" role="button" aria-label="More info" data-tip="${safe}">?</span>`;
+}
+
 export {
   ROLES, CDRAGON_NAME_FIX, ROLE_ICON_URL,
   esc, champSlug, champIconUrl, champImg,
@@ -155,4 +165,5 @@ export {
   RANK_LABELS, RANK_COLORS,
   PLOTLY_THEME, PLOTLY_AXIS,
   $, $$, setStatus,
+  infoTip,
 };
