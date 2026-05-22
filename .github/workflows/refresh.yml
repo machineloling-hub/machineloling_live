@@ -39,10 +39,6 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    # Skip non-matching tiers on manual dispatch; run all on schedule.
-    if: >-
-      github.event_name != 'workflow_dispatch' ||
-      github.event.inputs.tier == matrix.tier
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -85,10 +81,18 @@ jobs:
             echo "kind=fast" >> "$GITHUB_OUTPUT"
           fi
 
+      # On manual dispatch, only the selected tier runs the actual refresh;
+      # other matrix legs no-op. Scheduled runs always process every tier.
       - name: Refresh (fast - skip hier-Bayes)
-        if: steps.cadence.outputs.kind == 'fast'
+        if: >-
+          steps.cadence.outputs.kind == 'fast' &&
+          (github.event_name != 'workflow_dispatch' ||
+           github.event.inputs.tier == matrix.tier)
         run: python data_prep/refresh.py --skip hier
 
       - name: Refresh (full - includes hier-Bayes)
-        if: steps.cadence.outputs.kind == 'full'
+        if: >-
+          steps.cadence.outputs.kind == 'full' &&
+          (github.event_name != 'workflow_dispatch' ||
+           github.event.inputs.tier == matrix.tier)
         run: python data_prep/refresh.py
