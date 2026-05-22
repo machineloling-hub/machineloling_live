@@ -499,16 +499,18 @@ button { font-family: inherit; }
 .role-tile.active img { opacity: 1; filter: brightness(2.2); }
 
 /* Coverage role sub-tabs: same segmented look as the sidebar bar, but
-   wider segments so the icons aren't crammed together. */
+   compact so the icons read as a secondary control under the tab row. */
 #role-tabs.role-strip {
-  gap: 6px;
-  padding: 4px;
-  min-width: 280px;
+  gap: 4px;
+  padding: 3px;
+  min-width: 0;
+  width: max-content;
+  max-width: 100%;
 }
 #role-tabs .role-tile {
-  padding: 8px 18px;
+  padding: 4px 10px;
 }
-#role-tabs .role-tile img { width: 22px; height: 22px; }
+#role-tabs .role-tile img { width: 16px; height: 16px; }
 
 /* ── Rank list (sidebar) ──────────────────────────────────────────────── */
 .rank-list {
