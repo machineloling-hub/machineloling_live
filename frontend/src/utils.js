@@ -64,11 +64,14 @@ function renderScoreEquation(prefix = "Score") {
     + <b>${f(w.blind)}</b> × <span style="color:${BLIND_COLOR};">Blindability</span>`;
 }
 
-// Diverging palette (matches col_fun_match / col_fun_syn in R)
+// Diverging palette — orange (bad / anti-synergy) → muted dark neutral
+// (neutral) → teal (good / synergy). The midpoint and adjacent pales
+// are tuned for a dark UI so the centre of the gradient blends into
+// the surface instead of flashing pure white.
 const HEATMAP_COLORS_9 = [
-  "#D55E00", "#E27D32", "#F0A264", "#F8D1A0",
-  "#F7F7F7",
-  "#A8DBC5", "#5CBB96", "#009E73", "#006D50",
+  "#D55E00", "#C46A2B", "#8C5A3C", "#3E3A40",
+  "#1A2236",
+  "#2C4A47", "#3A8F73", "#1E9E73", "#006D50",
 ];
 function plotlyColorscale() {
   const n = HEATMAP_COLORS_9.length;
