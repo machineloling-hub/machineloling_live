@@ -325,13 +325,6 @@ async function init() {
   });
   $("#pb-build").addEventListener("click", () => buildPools());
 
-  // Blindability icon-size
-  $("#blind-icon-size").addEventListener("input", (e) => {
-    state.blindIconPx = parseInt(e.target.value);
-    $("#blind-icon-val").textContent = state.blindIconPx + " px";
-    if (state.view === "blindability") refresh();
-  });
-
   // Replacement mode
   $("#repl-mode").addEventListener("change", (e) => {
     state.replMode = e.target.value;
