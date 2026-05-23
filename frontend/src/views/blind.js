@@ -140,7 +140,10 @@ async function refreshBlindability() {
   // (non-pool first, pool last).
   const imgEls = scatterDiv.querySelectorAll(".imagelayer image");
   imgEls.forEach((el, i) => {
-    if (imgRows[i]) el.setAttribute("data-champ", imgRows[i].champion);
+    if (imgRows[i]) {
+      el.setAttribute("data-champ", imgRows[i].champion);
+      el.setAttribute("data-in-pool", imgRows[i].in_pool ? "1" : "0");
+    }
   });
 
   _attachBlindIconHover(scatterDiv);
@@ -170,6 +173,15 @@ function _attachBlindResize(div) {
 // We look up the target <image> by champion name (data-champ) because
 // re-appending shifts DOM order, so indexing by position would point at
 // the wrong element after the first hover.
+function _raisePoolIcons(div) {
+  // Pool icons must always render above non-pool icons. After any hover
+  // reorder, re-append them to the imagelayer so they stay on top.
+  const layer = div.querySelector(".imagelayer");
+  if (!layer) return;
+  layer.querySelectorAll('image[data-in-pool="1"]').forEach((el) => {
+    layer.appendChild(el);
+  });
+}
 function _attachBlindIconHover(div) {
   if (div._blindHoverWired) return;
   div._blindHoverWired = true;
@@ -187,12 +199,21 @@ function _attachBlindIconHover(div) {
     if (img.parentNode && img.parentNode.lastChild !== img) {
       img.parentNode.appendChild(img);
     }
+    // Hovering a non-pool icon would otherwise leave it above pool icons
+    // even after unhover; re-raise pool icons so they remain on top.
+    if (img.getAttribute("data-in-pool") !== "1") {
+      _raisePoolIcons(div);
+      // ...then re-raise the hovered non-pool icon above the pool icons
+      // (only while actively hovered).
+      img.parentNode.appendChild(img);
+    }
   });
   div.on("plotly_unhover", () => {
     if (div._blindHovered) {
       div._blindHovered.classList.remove("hovered");
       div._blindHovered = null;
     }
+    _raisePoolIcons(div);
   });
 }
 
