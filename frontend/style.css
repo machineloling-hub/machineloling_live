@@ -922,30 +922,10 @@ button { font-family: inherit; }
   transition: transform var(--dur-base) ease-out,
               filter var(--dur-base) ease-out;
 }
-/* Pool champs get a green ring rendered via stacked drop-shadows so the
-   outline stays stuck to the icon (moves with it on hover-reorder) instead
-   of being a separate Plotly shape that could overlap a neighbour. */
-#blind-scatter image[data-in-pool="1"] {
-  filter:
-    drop-shadow( 1.2px 0 0 #3DD9A4)
-    drop-shadow(-1.2px 0 0 #3DD9A4)
-    drop-shadow(0  1.2px 0 #3DD9A4)
-    drop-shadow(0 -1.2px 0 #3DD9A4)
-    drop-shadow(0 0 3px rgba(61, 217, 164, 0.55));
-}
 #blind-scatter image:hover,
 #blind-scatter image.hovered {
   transform: scale(1.8);
   filter: drop-shadow(0 0 8px rgba(61, 217, 164, 0.85));
-}
-#blind-scatter image[data-in-pool="1"]:hover,
-#blind-scatter image[data-in-pool="1"].hovered {
-  filter:
-    drop-shadow( 1.2px 0 0 #3DD9A4)
-    drop-shadow(-1.2px 0 0 #3DD9A4)
-    drop-shadow(0  1.2px 0 #3DD9A4)
-    drop-shadow(0 -1.2px 0 #3DD9A4)
-    drop-shadow(0 0 10px rgba(61, 217, 164, 0.95));
 }
 
 /* Heatmap key */

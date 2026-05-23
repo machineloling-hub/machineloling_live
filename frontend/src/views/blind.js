@@ -138,6 +138,12 @@ async function refreshBlindability() {
     }
   });
 
+  // Pool icons get a green ring drawn as a sibling <circle> in the same
+  // imagelayer. CSS drop-shadow on the icon would be clipped by Plotly's
+  // per-image clip-path; a separate circle isn't, and it stays stuck to the
+  // icon because we re-append the pair together in _raisePoolIcons.
+  _drawPoolRings(scatterDiv);
+
   _attachBlindIconHover(scatterDiv);
   _attachBlindResize(scatterDiv);
 
@@ -165,12 +171,41 @@ function _attachBlindResize(div) {
 // We look up the target <image> by champion name (data-champ) because
 // re-appending shifts DOM order, so indexing by position would point at
 // the wrong element after the first hover.
+function _drawPoolRings(div) {
+  const layer = div.querySelector(".imagelayer");
+  if (!layer) return;
+  // Drop any prior rings (e.g. from a previous render before resize).
+  layer.querySelectorAll('circle[data-ring-for]').forEach((c) => c.remove());
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  layer.querySelectorAll('image[data-in-pool="1"]').forEach((img) => {
+    const x = parseFloat(img.getAttribute("x")) || 0;
+    const y = parseFloat(img.getAttribute("y")) || 0;
+    const w = parseFloat(img.getAttribute("width")) || 0;
+    const h = parseFloat(img.getAttribute("height")) || 0;
+    const r = Math.max(w, h) / 2 + 2;
+    const ring = document.createElementNS(SVG_NS, "circle");
+    ring.setAttribute("cx", x + w / 2);
+    ring.setAttribute("cy", y + h / 2);
+    ring.setAttribute("r", r);
+    ring.setAttribute("fill", "none");
+    ring.setAttribute("stroke", "#3DD9A4");
+    ring.setAttribute("stroke-width", "2");
+    ring.setAttribute("data-ring-for", img.getAttribute("data-champ"));
+    ring.style.pointerEvents = "none";
+    // Insert immediately before the image so the icon paints on top of the
+    // ring; later _raisePoolIcons keeps the pair stacked together.
+    img.parentNode.insertBefore(ring, img);
+  });
+}
 function _raisePoolIcons(div) {
-  // Pool icons must always render above non-pool icons. After any hover
-  // reorder, re-append them to the imagelayer so they stay on top.
+  // Pool icons (and their paired rings) must always render above non-pool
+  // icons. After any hover reorder, re-append the ring + icon pair so they
+  // stay on top and stuck together.
   const layer = div.querySelector(".imagelayer");
   if (!layer) return;
   layer.querySelectorAll('image[data-in-pool="1"]').forEach((el) => {
+    const ring = layer.querySelector(`circle[data-ring-for="${CSS.escape(el.getAttribute("data-champ"))}"]`);
+    if (ring) layer.appendChild(ring);
     layer.appendChild(el);
   });
 }
