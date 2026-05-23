@@ -1895,7 +1895,12 @@ tr.in-pool-row td { background: var(--accent-soft); }
   .welcome-title { font-size: 26px; }
 }
 @media (max-width: 700px) {
-  .app-shell {
+  /* Force a single-column layout regardless of sidebar state. Use the
+     attribute selectors too so we beat the 900px-rule's specificity
+     (.app-shell[data-sidebar="..."]). */
+  .app-shell,
+  .app-shell[data-sidebar="expanded"],
+  .app-shell[data-sidebar="collapsed"] {
     grid-template-columns: 1fr;
     grid-template-areas: "topbar" "main";
   }
@@ -1917,7 +1922,7 @@ tr.in-pool-row td { background: var(--accent-soft); }
     background: var(--overlay);
     z-index: 55;
   }
-  #main { padding: var(--s-3) var(--s-3) var(--s-5); }
+  #main { padding: var(--s-3) var(--s-3) var(--s-5); min-width: 0; }
   .tabs-top { width: 100%; overflow-x: auto; }
   .topbar-brand .brand-name .brand-sub { display: none; }
 }
