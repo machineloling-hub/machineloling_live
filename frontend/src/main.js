@@ -278,7 +278,12 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   // the shell doesn't visually jump on first paint).
   const shell = document.getElementById("app");
   if (shell) {
-    const saved = (typeof localStorage !== "undefined" && localStorage.getItem("sidebar")) || "expanded";
+    const savedRaw = (typeof localStorage !== "undefined" && localStorage.getItem("sidebar")) || null;
+    // On narrow viewports (mobile) default to collapsed so the sliding
+    // overlay sidebar doesn't cover the welcome content on first load.
+    const isNarrow = typeof window !== "undefined"
+      && window.matchMedia && window.matchMedia("(max-width: 700px)").matches;
+    const saved = savedRaw || (isNarrow ? "collapsed" : "expanded");
     shell.dataset.sidebar = saved === "collapsed" ? "collapsed" : "expanded";
   }
   const sidebarToggle = document.getElementById("sidebar-toggle");
@@ -290,6 +295,22 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
       // Sidebar width change → reposition slider bubbles after the
       // layout settles.
       requestAnimationFrame(() => requestAnimationFrame(_repositionSliderBubbles));
+    });
+  }
+  // Mobile: tapping outside the sidebar (on the dimmed backdrop) closes it.
+  // The backdrop is rendered as ::after on the shell so we listen on the
+  // shell itself and check the click target is neither sidebar nor toggle.
+  if (shell) {
+    shell.addEventListener("click", (e) => {
+      if (shell.dataset.sidebar !== "expanded") return;
+      const narrow = window.matchMedia && window.matchMedia("(max-width: 700px)").matches;
+      if (!narrow) return;
+      const sb = document.getElementById("sidebar");
+      const tb = document.getElementById("sidebar-toggle");
+      if (sb && sb.contains(e.target)) return;
+      if (tb && tb.contains(e.target)) return;
+      shell.dataset.sidebar = "collapsed";
+      try { localStorage.setItem("sidebar", "collapsed"); } catch (_) { /* private mode */ }
     });
   }
 
