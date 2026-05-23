@@ -238,8 +238,12 @@ def _finalize(
     ind_rows = [{"champion": ch, "role": role, "games": g, "wins": w,
                  "win_rate": (w / g) if g else 0.0}
                 for (ch, role), (g, w) in ind_counts.items()]
-    out["individual_wr"] = pd.DataFrame(ind_rows).sort_values(
-        ["role", "games"], ascending=[True, False]).reset_index(drop=True)
+    if ind_rows:
+        out["individual_wr"] = pd.DataFrame(ind_rows).sort_values(
+            ["role", "games"], ascending=[True, False]).reset_index(drop=True)
+    else:
+        out["individual_wr"] = pd.DataFrame(
+            columns=["champion", "role", "games", "wins", "win_rate"])
 
     # Per-(champion, role) win-rate lookup, used for expected_wr below.
     wr_lookup = {(ch, role): (w / g) if g else 0.5
@@ -306,8 +310,12 @@ def _finalize(
     # ── PR table (parquet, lolalytics-shaped) ───────────────────────────
     pr_rows = [{"champion_name": ch, "lane": lane_l, "games": g}
                for (lane_l, ch), g in pr_counts.items()]
-    out["pr_table"] = pd.DataFrame(pr_rows).sort_values(
-        ["lane", "games"], ascending=[True, False]).reset_index(drop=True)
+    if pr_rows:
+        out["pr_table"] = pd.DataFrame(pr_rows).sort_values(
+            ["lane", "games"], ascending=[True, False]).reset_index(drop=True)
+    else:
+        out["pr_table"] = pd.DataFrame(
+            columns=["champion_name", "lane", "games"])
 
     return out
 
