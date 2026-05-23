@@ -209,6 +209,9 @@ let refreshPending = false;
 // and their pool). Patch + pool are best-effort: if a stored value isn't
 // in the current data set the live default takes over.
 const SIDEBAR_PREFS_KEY = "sidebarPrefs.v1";
+// In-memory mirror of per-role pools so role switches restore the user's
+// last selection for that role. Seeded from localStorage on load.
+const _poolsByRole = {};
 function _loadSidebarPrefs() {
   try {
     const raw = localStorage.getItem(SIDEBAR_PREFS_KEY);
@@ -226,11 +229,24 @@ function _loadSidebarPrefs() {
     if (Number.isFinite(p.prFloor)) state.prFloor = Math.min(0.02, Math.max(0.001, p.prFloor));
     if (typeof p.prWeighted === "boolean") state.prWeighted = p.prWeighted;
     if (typeof p.patch === "string") state.patch = p.patch;
-    if (Array.isArray(p.pool)) state.pool = p.pool.filter((c) => typeof c === "string").slice(0, 8);
+    if (p.pools && typeof p.pools === "object") {
+      for (const r of ROLES) {
+        const arr = p.pools[r];
+        if (Array.isArray(arr)) {
+          _poolsByRole[r] = arr.filter((c) => typeof c === "string").slice(0, 8);
+        }
+      }
+    }
+    // Migration: older schema stored a single `pool` for the active role.
+    if (Array.isArray(p.pool) && !_poolsByRole[state.role]) {
+      _poolsByRole[state.role] = p.pool.filter((c) => typeof c === "string").slice(0, 8);
+    }
+    if (_poolsByRole[state.role]) state.pool = _poolsByRole[state.role].slice();
   } catch (_) { /* corrupt prefs — ignore */ }
 }
 function _saveSidebarPrefs() {
   try {
+    _poolsByRole[state.role] = state.pool.slice();
     localStorage.setItem(SIDEBAR_PREFS_KEY, JSON.stringify({
       role: state.role,
       topX: state.topX,
@@ -238,7 +254,7 @@ function _saveSidebarPrefs() {
       prFloor: state.prFloor,
       prWeighted: state.prWeighted,
       patch: state.patch,
-      pool: state.pool,
+      pools: _poolsByRole,
     }));
   } catch (_) { /* private mode / quota — ignore */ }
 }
@@ -335,7 +351,12 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
     state.pbView = null;            // same for Pool Builder preview
     state.pbDefinite = []; state.pbMaybe = []; state.pbBuiltRows = null; state.pbSelectedId = null;
     await loadChampionsFor(state.role);
-    state.pool = topNChampions(state.role, 6);   // default to top-6 most played
+    // Restore this role's cached pool if we have one; otherwise default to
+    // the role's top-6 most-played. Drop any cached entries no longer present
+    // in the current champ list.
+    const allowed = new Set((state.champsByRole[state.role] || []).map((c) => c.champion));
+    const cached = (_poolsByRole[state.role] || []).filter((c) => allowed.has(c));
+    state.pool = cached.length ? cached : topNChampions(state.role, 6);
     poolMS.renderChips(); pbDefMS.renderChips(); pbMayMS.renderChips();
     state.otherRole = defaultOtherRole(state.role, state.view);
     renderRoleSubTabs();
