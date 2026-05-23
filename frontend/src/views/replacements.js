@@ -170,10 +170,7 @@ function renderTopPicks(rows, weights) {
     <h3 class="section-h">Top picks to add</h3>
     <div class="repl-top-grid">${top3.map((r, i) => card(r, i + 1)).join("")}</div>`;
   wrap.querySelectorAll(".repl-top-card").forEach((el) =>
-    el.addEventListener("click", () => {
-      state.replSelectedCand = el.dataset.cand;
-      refreshReplacements();
-    })
+    el.addEventListener("click", () => selectCandidate(el.dataset.cand))
   );
 }
 
@@ -223,11 +220,26 @@ function renderCandidatesTable(rows, weights) {
   ${rows.length > 100 ? `<div style="color:#888;font-size:12px;margin-top:4px;">Showing top 100 of ${rows.length}.</div>` : ""}`;
 
   table.querySelectorAll("tr[data-cand]").forEach((tr) =>
-    tr.addEventListener("click", () => {
-      state.replSelectedCand = tr.dataset.cand;
-      refreshReplacements();
-    })
+    tr.addEventListener("click", () => selectCandidate(tr.dataset.cand))
   );
+}
+
+// Local-only selection: re-render the preview pieces using already-fetched
+// data in state.replRanked. No API call → instant click response.
+function selectCandidate(cand) {
+  if (!cand || cand === state.replSelectedCand) return;
+  state.replSelectedCand = cand;
+  const rows = state.replRanked;
+  if (!rows) return;
+  // Update .selected class on table rows + top cards without rebuilding them.
+  document.querySelectorAll("#repl-table tr[data-cand]").forEach((tr) => {
+    tr.classList.toggle("selected", tr.dataset.cand === cand);
+  });
+  document.querySelectorAll("#repl-top-picks .repl-top-card").forEach((el) => {
+    el.classList.toggle("selected", el.dataset.cand === cand);
+  });
+  renderPreviewHeader();
+  renderReplPreview();
 }
 
 function renderPreviewHeader() {
