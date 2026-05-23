@@ -1,12 +1,12 @@
-import { state, _sigmaScenarioKey, _sigmaBody } from "../state.js?v=44";
-import { apiFetch } from "../api.js?v=44";
+import { state, _sigmaScenarioKey, _sigmaBody } from "../state.js";
+import { apiFetch } from "../api.js";
 import {
   $, champImg, esc,
-} from "../utils.js?v=44";
+} from "../utils.js";
 import {
   fetchLiveStrengthCurves, renderReplStrengthPanel,
-} from "../widgets/strength.js?v=44";
-import { populateViewSelect, renderPoolPreview } from "../widgets/heatmap.js?v=44";
+} from "../widgets/strength.js";
+import { populateViewSelect, renderPoolPreview } from "../widgets/heatmap.js";
 
 // ──────────────────────────────────────────────────────────────────────────
 // EXPAND YOUR POOL TAB (add-only — was Replacement Finder)
