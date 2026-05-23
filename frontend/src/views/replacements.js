@@ -186,9 +186,9 @@ function renderCandidatesTable(rows, weights) {
       <th>Champion</th>
       <th>Overall fit</th>
       <th>Lane matchups</th>
-      <th>Vs other lanes</th>
+      <th>Teamcomp Matchup</th>
       <th>Team synergy</th>
-      <th>Safe to first-pick</th>
+      <th>Blindability</th>
     </tr></thead>
     <tbody>${tr}</tbody>
   </table>

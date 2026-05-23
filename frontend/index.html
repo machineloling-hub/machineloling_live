@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=51">
+<link rel="stylesheet" href="style.css?v=52">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -208,13 +208,13 @@
           <label>Lane matchups: <span id="w-in-lane-val">0.7</span>
             <input id="w-in-lane" type="range" min="0" max="1" step="0.1" value="0.7">
           </label>
-          <label>Vs other lanes: <span id="w-out-lane-val">0.5</span>
+          <label>Teamcomp Matchup: <span id="w-out-lane-val">0.5</span>
             <input id="w-out-lane" type="range" min="0" max="1" step="0.1" value="0.5">
           </label>
           <label>Team synergy: <span id="w-synergy-val">1.0</span>
             <input id="w-synergy" type="range" min="0" max="1" step="0.1" value="1.0">
           </label>
-          <label>Safe to first-pick: <span id="w-blind-val">0.9</span>
+          <label>Blindability: <span id="w-blind-val">0.9</span>
             <input id="w-blind" type="range" min="0" max="1" step="0.1" value="0.9">
           </label>
         </fieldset>
@@ -242,7 +242,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=51"></script>
+<script type="module" src="src/main.js?v=52"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>
