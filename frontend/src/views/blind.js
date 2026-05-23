@@ -2,6 +2,15 @@ import { state } from "../state.js";
 import { apiFetch } from "../api.js";
 import { $, champImg, champIconUrl, fmtSign, tealOrangeBg, BLIND_COLOR } from "../utils.js";
 
+const _ROLE_DISPLAY = {
+  TOP: "Toplane",
+  JUNGLE: "Jungle",
+  MID: "Midlane",
+  ADC: "ADC",
+  SUP: "Support",
+};
+const _roleTitle = (r) => _ROLE_DISPLAY[r] || r;
+
 // ──────────────────────────────────────────────────────────────────────────
 // BLINDABILITY TAB
 // ──────────────────────────────────────────────────────────────────────────
@@ -56,7 +65,7 @@ async function refreshBlindability() {
   const innerHPx = PLOT_H - 60 - 80;
   const xRangeSize = xlim[1] - xlim[0];
   const yRangeSize = ylim[1] - ylim[0];
-  const iconPx = state.blindIconPx;
+  const iconPx = state.blindIconPx + 3;
   const iconSizeX = iconPx * xRangeSize / innerWPx;
   const iconSizeY = iconPx * yRangeSize / innerHPx;
 
@@ -75,8 +84,15 @@ async function refreshBlindability() {
     layer: "below",
   }));
 
-  // Champion icons via layout.images (one image per point)
-  const images = rows.map((r) => ({
+  // Champion icons via layout.images (one image per point). Pool champs
+  // are pushed last so Plotly renders them on top of non-pool icons —
+  // they're the user's actual picks and should never be obscured by a
+  // neighbouring sea of grey icons.
+  const imgRows = [
+    ...rows.filter((r) => !r.in_pool),
+    ...rows.filter((r) => r.in_pool),
+  ];
+  const images = imgRows.map((r) => ({
     source: champIconUrl(r.champion),
     xref: "x", yref: "y",
     x: r.matchup_mean, y: r.synergy_mean,
@@ -104,7 +120,7 @@ async function refreshBlindability() {
     paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
     font: { family: "Inter, sans-serif", color: "#E6EAF2" },
     margin: { l: 80, r: 30, t: 60, b: 80 },
-    title: { text: `${state.role} — blindability map`, font: { size: 16, color: BLIND_COLOR } },
+    title: { text: `${_roleTitle(state.role)} Blindability Map`, font: { size: 16, color: BLIND_COLOR } },
     xaxis: {
       range: xlim, title: { text: "Matchup blindability z (→ better vs random opponent)", font: { color: "#e6c978" } },
       zeroline: true, zerolinecolor: "#555",
@@ -120,10 +136,11 @@ async function refreshBlindability() {
 
   // Tag each rendered <image> with its champion name so hover/unhover can
   // find the right element even after we reorder DOM for z-order. Plotly
-  // emits images in layout.images order, which == rows order here.
+  // emits images in layout.images order, which == imgRows order here
+  // (non-pool first, pool last).
   const imgEls = scatterDiv.querySelectorAll(".imagelayer image");
   imgEls.forEach((el, i) => {
-    if (rows[i]) el.setAttribute("data-champ", rows[i].champion);
+    if (imgRows[i]) el.setAttribute("data-champ", imgRows[i].champion);
   });
 
   _attachBlindIconHover(scatterDiv);
