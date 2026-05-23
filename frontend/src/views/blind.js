@@ -110,6 +110,14 @@ async function refreshBlindability() {
     images, shapes,
   }, { displaylogo: false });
 
+  // Tag each rendered <image> with its champion name so hover/unhover can
+  // find the right element even after we reorder DOM for z-order. Plotly
+  // emits images in layout.images order, which == rows order here.
+  const imgEls = scatterDiv.querySelectorAll(".imagelayer image");
+  imgEls.forEach((el, i) => {
+    if (rows[i]) el.setAttribute("data-champ", rows[i].champion);
+  });
+
   _attachBlindIconHover(scatterDiv);
 
   renderBlindTable(data);
@@ -120,16 +128,18 @@ async function refreshBlindability() {
 // listen to Plotly's plotly_hover / plotly_unhover on the invisible
 // scatter trace and toggle a class on the matching <image>, also
 // re-appending it to its parent group so it draws on top.
+//
+// We look up the target <image> by champion name (data-champ) because
+// re-appending shifts DOM order, so indexing by position would point at
+// the wrong element after the first hover.
 function _attachBlindIconHover(div) {
-  // Plotly emits <image> elements in the same order as layout.images,
-  // which mirrors the `rows` array — index = pointIndex.
   if (div._blindHoverWired) return;
   div._blindHoverWired = true;
   div.on("plotly_hover", (ev) => {
     const pt = ev && ev.points && ev.points[0];
-    if (!pt) return;
-    const imgs = div.querySelectorAll(".imagelayer image");
-    const img = imgs[pt.pointIndex];
+    if (!pt || !pt.text) return;
+    const sel = `image[data-champ="${CSS.escape(pt.text)}"]`;
+    const img = div.querySelector(`.imagelayer ${sel}`);
     if (!img) return;
     if (div._blindHovered && div._blindHovered !== img) {
       div._blindHovered.classList.remove("hovered");
