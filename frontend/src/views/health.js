@@ -101,8 +101,10 @@ function renderRedundancyTable(rd) {
     .sort((a, b) => b[0] - a[0])
     .map((p) => p[1]);
 
-  const laneHeader = rd.lane_roles && rd.lane_roles.length
-    ? `Lane (${rd.lane_roles.join("+")})` : "Lane";
+  // Total "sole-best" columns across the pool == the denominator for the
+  // per-champ Optimal % cell. Each counted column adds +1 to exactly one
+  // champ in `unique_best`, so the sum is the contested-column total.
+  const uniqueTotal = (rd.unique_best || []).reduce((a, b) => a + (b || 0), 0);
 
   const corrCell = (v) => v == null
     ? '<td class="cell-na">—</td>'
@@ -127,10 +129,12 @@ function renderRedundancyTable(rd) {
   const tr = order.map((i, k) => {
     const ch = rd.rows[i];
     const label = k === 0 ? "Best mix" : k === order.length - 1 ? "Most redundant" : "";
+    const ub = rd.unique_best ? rd.unique_best[i] : 0;
+    const ubPct = uniqueTotal > 0 ? (ub / uniqueTotal) * 100 : 0;
     return `<tr>
       <td class="rank-col">${k + 1}</td>
       <td>${champImg(ch, 28)} <b>${ch}</b></td>
-      <td style="text-align:center;">${rd.unique_best[i]}</td>
+      <td style="text-align:center;">${ubPct.toFixed(0)}%</td>
       ${closestCell(i)}
       ${corrCell(rd.matchup_topx ? rd.matchup_topx[i] : null)}
       ${corrCell(rd.lane_topx ? rd.lane_topx[i] : null)}
@@ -153,13 +157,13 @@ function renderRedundancyTable(rd) {
       <thead><tr>
         <th class="rank-col">Rank ${infoTip("best mix \u2192 most redundant")}</th>
         <th>Champion</th>
-        <th>Unique best ${infoTip("# cols where this champ is sole best")}</th>
-        <th>Closest other (max Redundancy) ${infoTip("peak similarity to another pool member")}</th>
-        <th style="color:${MATCHUP_COLOR};">Matchup Redundancy (top-${state.topX}) ${infoTip(`mean of top-${state.topX} matchup overlaps`)}</th>
-        <th style="color:${MATCHUP_COLOR};">${laneHeader} Redundancy (top-${state.topX}) ${infoTip("same, your lane only")}</th>
-        <th style="color:${SYNERGY_COLOR};">Synergy Redundancy (top-${state.topX}) ${infoTip(`mean of top-${state.topX} synergy overlaps`)}</th>
-        <th>Avg Redundancy w/ others ${infoTip("mean correlation vs all others")}</th>
-        <th style="color:${BLIND_COLOR};">Blindability z ${infoTip("consistency across opponents", "left")}</th>
+        <th>Optimal % ${infoTip("share of contested columns where this champ is the sole best pick in your pool")}</th>
+        <th>Closest other ${infoTip("peak similarity to another pool member")}</th>
+        <th style="color:${MATCHUP_COLOR};">Matchup Redundancy ${infoTip(`mean of top-${state.topX} matchup overlaps`)}</th>
+        <th style="color:${MATCHUP_COLOR};">Lane Redundancy ${infoTip(`same as Matchup Redundancy but only your lane (${(rd.lane_roles || []).join("+") || "—"}); mean of top-${state.topX} overlaps`)}</th>
+        <th style="color:${SYNERGY_COLOR};">Synergy Redundancy ${infoTip(`mean of top-${state.topX} synergy overlaps`)}</th>
+        <th>Avg Redundancy ${infoTip("mean correlation vs all other pool members")}</th>
+        <th style="color:${BLIND_COLOR};">Blindability score ${infoTip("consistency across opponents", "left")}</th>
         <th></th>
       </tr></thead>
       <tbody>${tr}</tbody>
