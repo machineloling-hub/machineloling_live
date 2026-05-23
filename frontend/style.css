@@ -569,6 +569,9 @@ button { font-family: inherit; }
   min-width: 0;
   width: max-content;
   max-width: 100%;
+  /* #role-tabs also carries .tabs-sub which sets border-radius:pill;
+     re-assert the squared 8px container here so coverage matches meta. */
+  border-radius: 8px;
 }
 #role-tabs .role-tile,
 .meta-role-tabs .role-tile {
