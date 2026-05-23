@@ -1,5 +1,5 @@
 import { $, champImg } from "../utils.js";
-import { refresh } from "../main.js";
+import { refresh } from "../bus.js";
 
 // ──────────────────────────────────────────────────────────────────────────
 // POOL CHIP MULTI-SELECT (sidebar + builder definite/maybe)

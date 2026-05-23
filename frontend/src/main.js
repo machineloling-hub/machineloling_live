@@ -1,6 +1,7 @@
 import { state } from "./state.js";
 import { $, $$, setStatus, ROLES, ROLE_ICON_URL, RANK_LABELS, RANK_COLORS, esc } from "./utils.js";
 import { apiFetch, loadChampionsFor, topNChampions } from "./api.js";
+import { setRefresh } from "./bus.js";
 import { makeMultiSelect, makeSingleSelect } from "./widgets/multiselect.js";
 import { refreshCoverage, renderRoleSubTabs } from "./views/coverage.js";
 import { refreshBlindability } from "./views/blind.js";
@@ -488,6 +489,7 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   refresh();
 }
 
+setRefresh(refresh);
 init();
 
 export { refresh, setActiveView };
