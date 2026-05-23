@@ -82,12 +82,17 @@ async function refreshBlindability() {
     sizing: "contain", layer: "above",
   }));
 
-  // Hover-only invisible scatter so users get tooltips on the points
+  // Hover-only invisible scatter so users get tooltips on the points.
+  // Marker size is set to the *hovered* icon footprint (icon px × the
+  // 1.8 hover scale in CSS) so Plotly places the hover label outside
+  // the scaled-up icon instead of on top of it.
+  const HOVER_SCALE = 1.8;
   const traces = [{
     type: "scatter", mode: "markers",
     x, y, text: labels,
-    marker: { size: 6, color: "rgba(0,0,0,0)" },
+    marker: { size: Math.round(iconPx * HOVER_SCALE), color: "rgba(0,0,0,0)" },
     hovertemplate: "<b>%{text}</b><br>matchup z: %{x:.2f}<br>synergy z: %{y:.2f}<extra></extra>",
+    hoverlabel: { align: "left" },
     showlegend: false,
   }];
 
