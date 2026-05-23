@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=49">
+<link rel="stylesheet" href="style.css?v=50">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -58,7 +58,8 @@
       </select>
     </div>
 
-    <label>Your pool
+    <div class="field">
+      <span class="field-label">Your pool</span>
       <div id="pool-input-wrap" class="pool-stack">
         <div id="pool-chips"></div>
         <div id="pool-add-slot" class="pool-add-slot">
@@ -68,7 +69,7 @@
         <div id="pool-suggestions"></div>
       </div>
       <button id="clear-pool" class="btn-sm">Clear pool</button>
-    </label>
+    </div>
 
     <label>Picks considered per pairing <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="Only your pool's X best champions against each opponent (or partner) count toward the score. Lower X rewards a single strong counter; higher X rewards depth.">?</span> <span id="top-x-val">3</span>
       <input id="top-x" type="range" min="1" max="8" step="1" value="3">
@@ -338,7 +339,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=49"></script>
+<script type="module" src="src/main.js?v=50"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>
