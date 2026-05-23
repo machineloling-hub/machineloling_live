@@ -143,7 +143,15 @@ button { font-family: inherit; }
   transition: grid-template-columns var(--dur) var(--ease);
 }
 .app-shell[data-sidebar="collapsed"] {
-  grid-template-columns: var(--sidebar-w-collapsed) 1fr;
+  /* Collapsed = fully hidden sidebar at every viewport width. The sidebar
+     itself is taken out of flow (position: fixed below) and slid off-screen,
+     so the grid only needs a single main column. Avoids the previous 64px
+     desktop "strip" state that confused users when they widened the window
+     while collapsed. */
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "topbar"
+    "main";
 }
 
 /* Legacy #app fallback if shell wrapper is not present (defensive). */
@@ -245,24 +253,19 @@ button { font-family: inherit; }
   letter-spacing: 0.08em;
 }
 
-/* Collapsed-sidebar rules: hide labels, hints, weights legend; shrink padding */
+/* Collapsed-sidebar: slide the sidebar fully off-screen. We keep the
+   sidebar in the DOM (and don't toggle display) so its inline form-control
+   state survives across collapse/expand cycles. */
 .app-shell[data-sidebar="collapsed"] #sidebar {
-  padding: var(--s-4) var(--s-2) var(--s-6);
+  position: fixed;
+  top: var(--topbar-h);
+  left: 0; bottom: 0;
+  width: min(var(--sidebar-w), 86vw);
+  z-index: 60;
+  transform: translateX(-100%);
+  transition: transform var(--dur) var(--ease);
+  box-shadow: var(--shadow-md);
 }
-.app-shell[data-sidebar="collapsed"] #sidebar h1,
-.app-shell[data-sidebar="collapsed"] #sidebar .field-label,
-.app-shell[data-sidebar="collapsed"] #sidebar .hint,
-.app-shell[data-sidebar="collapsed"] #sidebar .weights-box,
-.app-shell[data-sidebar="collapsed"] #sidebar .checkbox-label,
-.app-shell[data-sidebar="collapsed"] #sidebar #pool-input-wrap,
-.app-shell[data-sidebar="collapsed"] #sidebar #clear-pool,
-.app-shell[data-sidebar="collapsed"] #sidebar input[type="range"],
-.app-shell[data-sidebar="collapsed"] #sidebar #status,
-.app-shell[data-sidebar="collapsed"] #sidebar .rank-row .rank-name { display: none; }
-.app-shell[data-sidebar="collapsed"] #sidebar .role-strip {
-  grid-template-columns: 1fr; gap: 4px;
-}
-.app-shell[data-sidebar="collapsed"] #sidebar .rank-row { justify-content: center; padding: 8px 4px; }
 
 #sidebar .field { margin-bottom: var(--s-4); color: var(--text); }
 #sidebar .field-label {
