@@ -84,6 +84,56 @@ function _positionBubble(sl, bubble) {
 function _repositionSliderBubbles() {
   for (const [sl, bubble] of _SLIDER_BUBBLES) _positionBubble(sl, bubble);
 }
+// Info-tip floater: a single body-level bubble repositioned on hover/focus
+// of any `.info-tip` glyph. Lets tooltips escape clipping containers like
+// the sidebar (which has overflow-y:auto, implicitly clipping overflow-x).
+function _initInfoTips() {
+  if (document.getElementById("tip-floater")) return;
+  const floater = document.createElement("div");
+  floater.id = "tip-floater";
+  floater.className = "tip-floater";
+  document.body.appendChild(floater);
+  let cur = null;
+  const place = (el) => {
+    const r = el.getBoundingClientRect();
+    const fr = floater.getBoundingClientRect();
+    let left = r.left + r.width / 2 - fr.width / 2;
+    left = Math.max(8, Math.min(window.innerWidth - fr.width - 8, left));
+    let top = r.bottom + 8;
+    if (top + fr.height > window.innerHeight - 8) top = r.top - fr.height - 8;
+    floater.style.left = left + "px";
+    floater.style.top = top + "px";
+  };
+  const show = (el) => {
+    if (cur === el) return;
+    cur = el;
+    floater.textContent = el.getAttribute("data-tip") || "";
+    floater.classList.add("visible");
+    place(el);
+  };
+  const hide = (el) => {
+    if (el && cur !== el) return;
+    cur = null;
+    floater.classList.remove("visible");
+  };
+  document.addEventListener("mouseover", (e) => {
+    const el = e.target.closest && e.target.closest(".info-tip");
+    if (el) show(el);
+  });
+  document.addEventListener("mouseout", (e) => {
+    const el = e.target.closest && e.target.closest(".info-tip");
+    if (el) hide(el);
+  });
+  document.addEventListener("focusin", (e) => {
+    if (e.target.classList && e.target.classList.contains("info-tip")) show(e.target);
+  });
+  document.addEventListener("focusout", (e) => {
+    if (e.target.classList && e.target.classList.contains("info-tip")) hide(e.target);
+  });
+  window.addEventListener("scroll", () => { if (cur) place(cur); }, true);
+  window.addEventListener("resize", () => { if (cur) place(cur); });
+}
+
 function _initSliderBubbles() {
   const sliders = document.querySelectorAll('#sidebar input[type="range"]');
   sliders.forEach((sl) => {
@@ -194,6 +244,7 @@ async function init() {
   }
 
   _initSliderBubbles();
+  _initInfoTips();
 
   // Top tabs
   $$(".tabs-top .tab-btn").forEach((b) =>
