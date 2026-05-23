@@ -97,17 +97,16 @@ pub fn strength_curves(
 
     // z_subs and blind_z depend on (role, patch, pr_floor, pr_weighted, shrink_alpha)
     // — invariant across pool_size / top_x. Build once and reuse for primary + extra.
-    let pr_table = pr_table_for(store, req.patch.as_deref());
+    // Use pr_for_role so per-patch data gaps (e.g. SUP missing for high tiers)
+    // fall back to the cross-patch default instead of returning an empty pool.
+    let patch = req.patch.as_deref();
     let eligible: Vec<String> = {
-        let mut e: Vec<String> = pr_table
-            .get(&req.my_role)
-            .map(|m| {
-                m.iter()
-                    .filter(|(_, &pr)| pr >= req.pr_floor)
-                    .map(|(ch, _)| ch.clone())
-                    .collect()
-            })
-            .unwrap_or_default();
+        let mut e: Vec<String> = store
+            .pr_for_role(&req.my_role, patch)
+            .iter()
+            .filter(|(_, &pr)| pr >= req.pr_floor)
+            .map(|(ch, _)| ch.clone())
+            .collect();
         e.sort();
         e
     };
@@ -127,7 +126,7 @@ pub fn strength_curves(
                 &req.my_role,
                 opp,
                 &eligible,
-                pr_table,
+                patch,
                 req.pr_floor,
                 req.shrink_alpha,
             ) {
@@ -170,18 +169,6 @@ pub fn strength_curves(
         primary,
         extra,
     })
-}
-
-fn pr_table_for<'a>(
-    store: &'a DataStore,
-    patch: Option<&str>,
-) -> &'a HashMap<String, HashMap<String, f32>> {
-    if let Some(p) = patch {
-        if let Some(t) = store.pr_by_patch.get(p) {
-            return t;
-        }
-    }
-    &store.pr_by_role
 }
 
 fn run_scenario(
@@ -338,7 +325,7 @@ fn build_z_subset(
     my_role: &str,
     other_role: &str,
     eligible: &[String],
-    pr_table: &HashMap<String, HashMap<String, f32>>,
+    patch: Option<&str>,
     pr_floor: f32,
     shrink_alpha: f32,
 ) -> Option<ZSubset> {
@@ -359,8 +346,7 @@ fn build_z_subset(
         .map(|(i, ch)| (ch.as_str(), i))
         .collect();
 
-    let empty: HashMap<String, f32> = HashMap::new();
-    let pr_other = pr_table.get(other_role).unwrap_or(&empty);
+    let pr_other = store.pr_for_role(other_role, patch);
 
     let keep_cols_idx: Vec<usize> = pair
         .cols
