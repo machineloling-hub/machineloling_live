@@ -95,21 +95,53 @@ pub fn champion_correlation(
         return None;
     }
 
-    // All slabs share the same `rows` (champs at my_role, alphabetized).
-    let first = match z_mats.values().next() {
-        Some(s) => s,
-        None => return None,
-    };
-    let rows: Vec<String> = first.rows.clone();
+    // Each slab can have a different `rows` list (data_prep applies a
+    // per-(role-pair) PR filter, so e.g. SUP matchup may carry 37 champs
+    // while SUP synergy-with-MID only carries 27). To horizontally stack
+    // them we project every slab onto a common row list — the intersection
+    // of champion names across all slabs — preserving the order from the
+    // first slab.
+    let slabs_vec: Vec<&crate::ports::ZMatrix> = z_mats.values().collect();
+    let mut rows: Vec<String> = slabs_vec[0].rows.clone();
+    for s in slabs_vec.iter().skip(1) {
+        let set: std::collections::HashSet<&str> =
+            s.rows.iter().map(|r| r.as_str()).collect();
+        rows.retain(|r| set.contains(r.as_str()));
+    }
+    if rows.is_empty() {
+        return None;
+    }
     let sel_idx = match rows.iter().position(|c| c == &req.champion) {
         Some(i) => i,
         None => return None,
     };
 
+    // Per-slab row permutation: for each master-rows champion, find its
+    // index inside the slab's own `rows` list.
+    let project_pp = |slab: &crate::ports::ZMatrix| -> Array2<f32> {
+        let pos_map: std::collections::HashMap<&str, usize> = slab
+            .rows
+            .iter()
+            .enumerate()
+            .map(|(i, r)| (r.as_str(), i))
+            .collect();
+        let nc = slab.pp.ncols();
+        let mut out = Array2::<f32>::zeros((rows.len(), nc));
+        for (new_i, ch) in rows.iter().enumerate() {
+            if let Some(&old_i) = pos_map.get(ch.as_str()) {
+                for c in 0..nc {
+                    out[[new_i, c]] = slab.pp[[old_i, c]];
+                }
+            }
+        }
+        out
+    };
+
     // Collect matchup + synergy slabs in canonical (ROLES) order so
     // results are deterministic regardless of HashMap iteration order.
-    let mut matchup_slabs: Vec<(&'static str, &Vec<String>, &Array2<f32>, Vec<f32>)> = Vec::new();
-    let mut synergy_slabs: Vec<(&'static str, &Vec<String>, &Array2<f32>, Vec<f32>)> = Vec::new();
+    // Each slab is stored as a row-projected owned matrix.
+    let mut matchup_slabs: Vec<(&'static str, Vec<String>, Array2<f32>, Vec<f32>)> = Vec::new();
+    let mut synergy_slabs: Vec<(&'static str, Vec<String>, Array2<f32>, Vec<f32>)> = Vec::new();
     for &pos in ROLES.iter() {
         for &mv in &["matchup", "synergy"] {
             let key = format!("{}_{}", mv, pos);
@@ -123,17 +155,18 @@ pub fn champion_correlation(
                 .iter()
                 .map(|c| pr_pos.get(c.as_str()).copied().unwrap_or(0.0))
                 .collect();
+            let pp_proj = project_pp(slab);
             if mv == "matchup" {
-                matchup_slabs.push((pos, &slab.cols, &slab.pp, weights));
+                matchup_slabs.push((pos, slab.cols.clone(), pp_proj, weights));
             } else {
-                synergy_slabs.push((pos, &slab.cols, &slab.pp, weights));
+                synergy_slabs.push((pos, slab.cols.clone(), pp_proj, weights));
             }
         }
     }
 
     // Horizontally stack matchup and synergy pp matrices.
-    let m_match = hstack(&matchup_slabs.iter().map(|s| s.2).collect::<Vec<_>>(), rows.len());
-    let m_syn = hstack(&synergy_slabs.iter().map(|s| s.2).collect::<Vec<_>>(), rows.len());
+    let m_match = hstack(&matchup_slabs.iter().map(|s| &s.2).collect::<Vec<_>>(), rows.len());
+    let m_syn = hstack(&synergy_slabs.iter().map(|s| &s.2).collect::<Vec<_>>(), rows.len());
     let w_match: Vec<f32> = matchup_slabs.iter().flat_map(|s| s.3.clone()).collect();
     let w_syn: Vec<f32> = synergy_slabs.iter().flat_map(|s| s.3.clone()).collect();
 
