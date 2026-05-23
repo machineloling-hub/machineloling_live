@@ -202,7 +202,48 @@ function setActiveView(view) {
 }
 
 let refreshPending = false;
-async function refresh() {
+
+// ── Sidebar prefs persistence ────────────────────────────────────────────
+// Cache the fields the user actively tunes in the sidebar so reloads keep
+// their setup (role, rank bracket, top-X, score weights, PR floor / weighting,
+// and their pool). Patch + pool are best-effort: if a stored value isn't
+// in the current data set the live default takes over.
+const SIDEBAR_PREFS_KEY = "sidebarPrefs.v1";
+function _loadSidebarPrefs() {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_PREFS_KEY);
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (typeof p.role === "string" && ROLES.includes(p.role)) state.role = p.role;
+    if (Number.isFinite(p.topX)) state.topX = Math.min(8, Math.max(1, p.topX | 0));
+    if (p.weights && typeof p.weights === "object") {
+      for (const k of ["in_lane", "out_lane", "synergy", "blind"]) {
+        const v = p.weights[k];
+        if (Number.isFinite(v)) state.weights[k] = Math.min(1, Math.max(0, v));
+      }
+      state.blindPenalty = state.weights.blind;
+    }
+    if (Number.isFinite(p.prFloor)) state.prFloor = Math.min(0.02, Math.max(0.001, p.prFloor));
+    if (typeof p.prWeighted === "boolean") state.prWeighted = p.prWeighted;
+    if (typeof p.patch === "string") state.patch = p.patch;
+    if (Array.isArray(p.pool)) state.pool = p.pool.filter((c) => typeof c === "string").slice(0, 8);
+  } catch (_) { /* corrupt prefs — ignore */ }
+}
+function _saveSidebarPrefs() {
+  try {
+    localStorage.setItem(SIDEBAR_PREFS_KEY, JSON.stringify({
+      role: state.role,
+      topX: state.topX,
+      weights: state.weights,
+      prFloor: state.prFloor,
+      prWeighted: state.prWeighted,
+      patch: state.patch,
+      pool: state.pool,
+    }));
+  } catch (_) { /* private mode / quota — ignore */ }
+}
+
+async function _refreshImpl() {
   if (refreshPending) return;
   refreshPending = true;
   await new Promise((r) => setTimeout(r, 0));
@@ -221,10 +262,17 @@ async function refresh() {
     setStatus("error: " + e.message);
   }
 }
+async function refresh() {
+  _saveSidebarPrefs();
+  return _refreshImpl();
+}
 
 // ──────────────────────────────────────────────────────────────────────────
-async function init() {
-  // Restore persisted sidebar collapse state (set before any tabs render so
+async function init() {  // Restore cached sidebar settings (role/weights/etc.) into state BEFORE
+  // we wire DOM controls so their initial values reflect the user's last
+  // session instead of the hardcoded HTML defaults.
+  _loadSidebarPrefs();
+  const _poolRestored = state.pool.length > 0;  // Restore persisted sidebar collapse state (set before any tabs render so
   // the shell doesn't visually jump on first paint).
   const shell = document.getElementById("app");
   if (shell) {
@@ -245,6 +293,29 @@ async function init() {
 
   _initSliderBubbles();
   _initInfoTips();
+
+  // Sync sidebar DOM controls with restored state so the UI matches the
+  // cached values immediately on load.
+  const _roleSel = $("#role");
+  if (_roleSel) _roleSel.value = state.role;
+  const _topX = $("#top-x");
+  if (_topX) { _topX.value = state.topX; $("#top-x-val").textContent = state.topX; }
+  const _wMap = { in_lane: "w-in-lane", out_lane: "w-out-lane", synergy: "w-synergy", blind: "w-blind" };
+  for (const [k, id] of Object.entries(_wMap)) {
+    const sl = document.getElementById(id);
+    const lb = document.getElementById(id + "-val");
+    if (sl) sl.value = state.weights[k];
+    if (lb) lb.textContent = Number(state.weights[k]).toFixed(1);
+  }
+  const _prw = $("#pr-weighted");
+  if (_prw) _prw.checked = state.prWeighted;
+  const _prf = $("#pr-floor");
+  if (_prf) {
+    const pct = state.prFloor * 100;
+    _prf.value = pct;
+    const decimals = (pct * 10) % 1 === 0 ? 1 : 2;
+    $("#pr-floor-val").textContent = pct.toFixed(decimals) + "%";
+  }
 
   // Top tabs
   $$(".tabs-top .tab-btn").forEach((b) =>
@@ -402,7 +473,12 @@ async function init() {
   // tournament-feel pick rates out of the box.
   const meta = await (await apiFetch("/api/meta")).json();
   state.patches = meta.patches || [];
-  state.patch = meta.latest_patch || null;
+  // Honour the cached patch if it's still in the available bracket list;
+  // otherwise fall back to the server's latest default.
+  const _cachedPatch = state.patch;
+  if (!(_cachedPatch && state.patches.includes(_cachedPatch))) {
+    state.patch = meta.latest_patch || null;
+  }
   const patchSel = $("#patch");
   // RANK_LABELS is defined at module scope (see top of file).
   if (state.patches.length) {
@@ -427,7 +503,14 @@ async function init() {
   renderRankList();
 
   await loadChampionsFor(state.role);
-  state.pool = topNChampions(state.role, 6);    // initial default pool
+  // Keep the restored pool if present; otherwise default to the role's top-6
+  // most-played champions. Trim any cached entries that no longer exist for
+  // this role's champ list (e.g. data refresh dropped a name).
+  if (_poolRestored) {
+    const allowed = new Set((state.champsByRole[state.role] || []).map((c) => c.champion));
+    state.pool = state.pool.filter((c) => allowed.has(c));
+  }
+  if (!state.pool.length) state.pool = topNChampions(state.role, 6);
   poolMS.renderChips();
   setActiveView("welcome");
   refresh();
