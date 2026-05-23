@@ -440,6 +440,10 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
     setSelected: (v) => { state.pool = v; },
     max: 8,
   });
+  // Clicking anywhere on the dotted add-slot focuses the input.
+  $("#pool-add-slot")?.addEventListener("click", (e) => {
+    if (e.target.id !== "pool-search") $("#pool-search").focus();
+  });
 
   // Pool builder definite + maybe
   window.pbDefMS = makeMultiSelect({

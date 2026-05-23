@@ -633,6 +633,109 @@ button { font-family: inherit; }
 #pool-input-wrap:focus-within, .pool-input-wrap:focus-within {
   border-color: var(--accent);
 }
+
+/* Stacked variant (sidebar Your-pool): chips and add slot render as
+   full-width vertical rows instead of pills. */
+#pool-input-wrap.pool-stack {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pool-stack #pool-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pool-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 4px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.pool-row:hover { background: var(--surface-2); border-color: var(--border); }
+.pool-row img,
+.pool-row .champ-icon {
+  width: 32px; height: 32px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.pool-row-name {
+  flex: 1;
+  font-size: var(--fs-body);
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pool-row-x {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 6px;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.pool-row-x:hover { background: var(--c-neg); color: var(--text); }
+
+.pool-add-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  background: transparent;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--r-sm);
+  min-height: 42px;
+  transition: border-color var(--dur-fast), background var(--dur-fast);
+  cursor: text;
+}
+.pool-add-slot:hover,
+.pool-add-slot:focus-within {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--surface-1);
+}
+.pool-add-plus {
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-dim);
+  border: 1.5px dashed var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color var(--dur-fast), border-color var(--dur-fast);
+}
+.pool-add-slot:hover .pool-add-plus,
+.pool-add-slot:focus-within .pool-add-plus {
+  color: var(--accent);
+  border-color: var(--accent);
+  border-style: solid;
+}
+.pool-stack #pool-search {
+  background: transparent !important;
+  border: none !important;
+  padding: 4px 0 !important;
+  flex: 1;
+  outline: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  min-width: 0;
+}
+
 #pool-chips, .pool-chips, #pb-definite-chips, #pb-maybe-chips, #cmp-champ-chip {
   display: flex; flex-wrap: wrap; gap: 4px;
 }

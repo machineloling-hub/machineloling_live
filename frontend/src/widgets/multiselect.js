@@ -8,9 +8,29 @@ function makeMultiSelect({ chipsId, searchId, suggestionsId, getList, getSelecte
   const chips = $(chipsId);
   const search = $(searchId);
   const sugg = $(suggestionsId);
+  const stack = chips?.parentElement?.classList?.contains("pool-stack");
   let active = -1;
 
   const renderChips = () => {
+    if (stack) {
+      chips.innerHTML = getSelected().map((c) => `
+        <div class="pool-row" data-c="${c}">
+          ${champImg(c, 32)}
+          <span class="pool-row-name">${c}</span>
+          <button type="button" class="pool-row-x" data-c="${c}" aria-label="Remove ${c}">×</button>
+        </div>
+      `).join("");
+      chips.querySelectorAll(".pool-row-x").forEach((el) =>
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const c = e.currentTarget.dataset.c;
+          setSelected(getSelected().filter((x) => x !== c));
+          renderChips();
+          refresh();
+        })
+      );
+      return;
+    }
     chips.innerHTML = getSelected().map((c) => `
       <span class="pool-chip">${champImg(c, 16)}${c}<span class="x" data-c="${c}">×</span></span>
     `).join("");
