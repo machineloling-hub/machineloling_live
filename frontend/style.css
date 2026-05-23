@@ -1893,13 +1893,11 @@ tr.in-pool-row td { background: var(--accent-soft); }
 @media (max-width: 1100px) {
   #main { padding: var(--s-4) var(--s-4) var(--s-6); }
 }
-@media (max-width: 900px) {
-  /* At and below this breakpoint we switch to the mobile overlay layout:
-     a single-column grid, the topbar sticky on top, and the sidebar is
-     a slide-out overlay over the main content. This avoids the 64px
-     desktop "collapsed strip" being mistaken for the page's left margin
-     on phones — which made #main start ~64px from the left and overflow
-     the right edge. */
+/* Mobile-overlay layout kicks in for narrow viewports OR for any touch
+   device up through 1200px. Touch devices include phones-in-landscape,
+   tablets, and 2-in-1s where the CSS viewport may report 1024+ but the
+   physical screen is small. */
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1200px) {
   .app-shell,
   .app-shell[data-sidebar="expanded"],
   .app-shell[data-sidebar="collapsed"] {
