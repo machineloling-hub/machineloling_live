@@ -915,7 +915,11 @@ button { font-family: inherit; }
    hovered icon (scale + glow). JS in views/blind.js raises the hovered
    <image> to the end of its SVG group so it draws on top of neighbors. */
 #blind-scatter image {
-  clip-path: circle(50%);
+  /* For SVG <image>, the default clip-path reference box is view-box (the
+     full plot area), so `circle(50%)` would be huge and never crop the
+     icon. Anchor the clip to the element's own fill-box so it actually
+     rounds each champion tile to a circle. */
+  clip-path: circle(50% at center) fill-box;
   cursor: pointer;
   transform-box: fill-box;
   transform-origin: center;
