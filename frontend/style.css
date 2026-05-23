@@ -559,19 +559,23 @@ button { font-family: inherit; }
 }
 .role-tile.active img { opacity: 1; filter: brightness(2.2); }
 
-/* Coverage role sub-tabs: same segmented look as the sidebar bar, but
-   compact so the icons read as a secondary control under the tab row. */
-#role-tabs.role-strip {
+/* Coverage role sub-tabs + meta role tabs share the same compact
+   segmented look so the bar is identical across Matchup, Synergy, and
+   Playrate by Rank views. */
+#role-tabs.role-strip,
+.meta-role-tabs.role-strip {
   gap: 4px;
   padding: 3px;
   min-width: 0;
   width: max-content;
   max-width: 100%;
 }
-#role-tabs .role-tile {
+#role-tabs .role-tile,
+.meta-role-tabs .role-tile {
   padding: 5px 10px;
 }
-#role-tabs .role-tile img { width: 16px; height: 16px; }
+#role-tabs .role-tile img,
+.meta-role-tabs .role-tile img { width: 16px; height: 16px; }
 
 /* ── Rank list (sidebar) ──────────────────────────────────────────────── */
 .rank-list {
@@ -1347,9 +1351,6 @@ button { font-family: inherit; }
   display: flex; align-items: center; justify-content: space-between;
   gap: var(--s-4); flex-wrap: wrap;
 }
-.meta-role-tabs.role-strip { width: max-content; max-width: 100%; }
-/* Legacy text-button styles kept as no-ops; the .role-strip / .role-tile
-   rules above own all the visual styling now. */
 .meta-show-all-label {
   color: var(--text-muted); font-size: var(--fs-sm);
   cursor: pointer; display: flex; align-items: center; gap: var(--s-1);
