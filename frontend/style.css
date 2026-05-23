@@ -283,7 +283,7 @@ button { font-family: inherit; }
 /* Slider value-pill convention: <span> right after the slider label.
    For sliders, the pill is upgraded to a floating bubble that tracks the
    thumb (positioned via inline `left` set in main.js). */
-#sidebar label > span:not(.hint) {
+#sidebar label > span:not(.hint):not(.info-tip) {
   display: inline-block;
   margin-left: var(--s-1);
   padding: 1px 8px;
