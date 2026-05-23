@@ -28,6 +28,9 @@ half = "2.4"
 # Index/champions JSON parsing happens once at startup. Per-request payloads
 # go through serde-wasm-bindgen instead, no JSON serialization in hot path.
 serde_json = "1"
+# Routes Rust panics through console.error with source-mapped stack so
+# we get real messages instead of `RuntimeError: unreachable`.
+console_error_panic_hook = "0.1"
 
 [profile.release]
 # Optimize for size first, speed second — wasm payload size matters more

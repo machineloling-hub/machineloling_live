@@ -30,6 +30,17 @@ pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
+/// One-shot panic-hook installer; called from `Engine::new` so any panic
+/// in a wasm endpoint surfaces in the browser console with the real
+/// message + Rust source location, instead of a bare `unreachable`.
+fn install_panic_hook() {
+    use std::sync::Once;
+    static HOOK: Once = Once::new();
+    HOOK.call_once(|| {
+        console_error_panic_hook::set_once();
+    });
+}
+
 #[wasm_bindgen]
 pub struct Engine {
     store: data::DataStore,
@@ -46,6 +57,7 @@ impl Engine {
         index_json: &str,
         champions_json: &str,
     ) -> Result<Engine, JsError> {
+        install_panic_hook();
         let store = data::DataStore::load(matrices_bin, index_json, champions_json)
             .map_err(|e| JsError::new(&e))?;
         Ok(Engine { store })
