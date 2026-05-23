@@ -9,7 +9,7 @@ import { refreshBans } from "./views/bans.js";
 import {
   refreshBuilder, refreshComboCount, buildPools, renderBuilderResults,
 } from "./views/builder.js";
-import { refreshReplacements, renderReplPreview } from "./views/replacements.js";
+import { refreshReplacements } from "./views/replacements.js";
 import { refreshMeta } from "./views/meta.js";
 
 const SYNERGY_DEFAULT_PARTNER = {
@@ -470,10 +470,6 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   $("#pb-view").addEventListener("change", (e) => {
     state.pbView = e.target.value;
     renderBuilderResults();
-  });
-  $("#repl-view").addEventListener("change", (e) => {
-    state.replView = e.target.value;
-    renderReplPreview();
   });
 
   // Rank-bracket selector — populated from /api/meta. The "patches" field

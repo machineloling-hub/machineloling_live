@@ -3,10 +3,6 @@ import { apiFetch } from "../api.js";
 import {
   $, champImg, esc,
 } from "../utils.js";
-import {
-  fetchLiveStrengthCurves, renderReplStrengthPanel,
-} from "../widgets/strength.js";
-import { populateViewSelect, renderPoolPreview } from "../widgets/heatmap.js";
 
 // ──────────────────────────────────────────────────────────────────────────
 // EXPAND YOUR POOL TAB (add-only — was Replacement Finder)
@@ -81,11 +77,9 @@ function whyPick(row, weights) {
 async function refreshReplacements() {
   const topPicks = $("#repl-top-picks");
   const table = $("#repl-table");
-  const previewHeader = $("#repl-preview-header");
 
   if (state.pool.length === 0) {
     if (topPicks) topPicks.innerHTML = "";
-    if (previewHeader) previewHeader.innerHTML = "";
     table.innerHTML = '<div class="empty-msg">Add champions to your pool to see candidates.</div>';
     return;
   }
@@ -94,22 +88,10 @@ async function refreshReplacements() {
   table.innerHTML = "";
 
   const basePoolSize = state.pool.length;
-  const newPoolSize = basePoolSize + 1;
   const replScenario = _sigmaScenarioKey({
     role: state.role, patch: state.patch, pool_size: basePoolSize,
     top_x: state.topX, pr_floor: state.prFloor, pr_weighted: state.prWeighted,
     shrink_alpha: state.shrinkAlpha,
-  });
-  // Curves still feed the strength preview panel (kept) even though the
-  // candidates table no longer surfaces σ deltas.
-  const live = await fetchLiveStrengthCurves({
-    role: state.role, patch: state.patch,
-    pool_size: basePoolSize, top_x: state.topX,
-    pr_floor: state.prFloor, pr_weighted: state.prWeighted,
-    shrink_alpha: state.shrinkAlpha,
-    weights: state.weights,
-    extra_pool_size: newPoolSize,
-    extra_top_x: state.topX,
   });
   const data = await apiFetch("/api/replacements", {
     method: "POST", headers: { "Content-Type": "application/json" },
@@ -128,8 +110,6 @@ async function refreshReplacements() {
     if (topPicks) topPicks.innerHTML = "";
     table.innerHTML = '<div class="empty-msg">No candidates available.</div>';
     state.replRanked = null; state.replSelectedCand = null;
-    if (previewHeader) previewHeader.innerHTML = "";
-    Plotly.purge($("#repl-new-pool-hm")); $("#repl-new-pool-hm").innerHTML = "";
     return;
   }
 
@@ -140,11 +120,6 @@ async function refreshReplacements() {
 
   renderTopPicks(data.rows, state.weights);
   renderCandidatesTable(data.rows, state.weights);
-  renderPreviewHeader();
-
-  renderReplStrengthPanel(data, live, basePoolSize, newPoolSize);
-  state.replView = populateViewSelect($("#repl-view"), state.role, state.replView, `matchup_${state.role}`);
-  renderReplPreview();
 }
 
 function renderTopPicks(rows, weights) {
@@ -224,46 +199,17 @@ function renderCandidatesTable(rows, weights) {
   );
 }
 
-// Local-only selection: re-render the preview pieces using already-fetched
-// data in state.replRanked. No API call → instant click response.
+// Local-only selection: just toggle the .selected highlight; no preview to update.
 function selectCandidate(cand) {
   if (!cand || cand === state.replSelectedCand) return;
   state.replSelectedCand = cand;
-  const rows = state.replRanked;
-  if (!rows) return;
-  // Update .selected class on table rows + top cards without rebuilding them.
   document.querySelectorAll("#repl-table tr[data-cand]").forEach((tr) => {
     tr.classList.toggle("selected", tr.dataset.cand === cand);
   });
   document.querySelectorAll("#repl-top-picks .repl-top-card").forEach((el) => {
     el.classList.toggle("selected", el.dataset.cand === cand);
   });
-  renderPreviewHeader();
-  renderReplPreview();
 }
 
-function renderPreviewHeader() {
-  const el = $("#repl-preview-header");
-  if (!el) return;
-  const cand = state.replSelectedCand;
-  if (!cand) { el.innerHTML = ""; return; }
-  el.innerHTML = `<h3 class="section-h" style="margin-top:24px;">Preview: how your pool changes if you add ${champImg(cand, 22)} <b>${esc(cand)}</b></h3>`;
-}
-
-function renderReplPreview() {
-  if (!state.replRanked || !state.replSelectedCand) {
-    Plotly.purge($("#repl-new-pool-hm")); $("#repl-new-pool-hm").innerHTML = "";
-    return;
-  }
-  const row = state.replRanked.find((r) => r.candidate === state.replSelectedCand);
-  if (!row) return;
-  const actualPool = [...state.pool, row.candidate];
-  const highlightChamps = [row.candidate];
-  const labelSuffix = { [row.candidate]: "(add)" };
-  renderPoolPreview("#repl-new-pool-hm", actualPool, state.replView, {
-    highlightChamps, labelSuffix, extraRows: [],
-  });
-}
-
-export { refreshReplacements, renderReplPreview };
+export { refreshReplacements };
 
