@@ -1558,8 +1558,12 @@ button { font-family: inherit; }
 
 /* ── Welcome / landing tab ────────────────────────────────────────────── */
 .welcome-wrap {
-  max-width: 1100px;
-  margin: 0 auto;
+  /* Fill the main column. #main already enforces a 1600px max-width and
+     centers itself, so further centering here would create a visible left
+     margin whenever the sidebar is collapsed and #main expands to fill
+     the viewport. */
+  max-width: 100%;
+  margin: 0;
   padding: var(--s-2) 0 var(--s-6);
   position: relative;
 }
