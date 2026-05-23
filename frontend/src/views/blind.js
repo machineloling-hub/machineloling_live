@@ -172,7 +172,9 @@ function _attachBlindResize(div) {
 // re-appending shifts DOM order, so indexing by position would point at
 // the wrong element after the first hover.
 function _drawPoolRings(div) {
-  const layer = div.querySelector(".imagelayer");
+  // Plotly renders four .imagelayer groups (below/subplot/between/above);
+  // our images use `layer: "above"` so only the last one is populated.
+  const layer = div.querySelector(".layer-above .imagelayer");
   if (!layer) return;
   // Drop any prior rings (e.g. from a previous render before resize).
   layer.querySelectorAll('circle[data-ring-for]').forEach((c) => c.remove());
@@ -201,7 +203,7 @@ function _raisePoolIcons(div) {
   // Pool icons (and their paired rings) must always render above non-pool
   // icons. After any hover reorder, re-append the ring + icon pair so they
   // stay on top and stuck together.
-  const layer = div.querySelector(".imagelayer");
+  const layer = div.querySelector(".layer-above .imagelayer");
   if (!layer) return;
   layer.querySelectorAll('image[data-in-pool="1"]').forEach((el) => {
     const ring = layer.querySelector(`circle[data-ring-for="${CSS.escape(el.getAttribute("data-champ"))}"]`);
@@ -216,7 +218,7 @@ function _attachBlindIconHover(div) {
     const pt = ev && ev.points && ev.points[0];
     if (!pt || !pt.text) return;
     const sel = `image[data-champ="${CSS.escape(pt.text)}"]`;
-    const img = div.querySelector(`.imagelayer ${sel}`);
+    const img = div.querySelector(`.layer-above .imagelayer ${sel}`);
     if (!img) return;
     if (div._blindHovered && div._blindHovered !== img) {
       div._blindHovered.classList.remove("hovered");
