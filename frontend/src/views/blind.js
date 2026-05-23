@@ -69,21 +69,12 @@ async function refreshBlindability() {
   const iconSizeX = iconPx * xRangeSize / innerWPx;
   const iconSizeY = iconPx * yRangeSize / innerHPx;
 
-  // Green CIRCLE outline around each pool champ. Layered "above" so the
-  // outline stays visible over neighbouring non-pool icons; the fill is kept
-  // near-transparent so the pool icon underneath isn't dimmed.
-  const boxPadX = iconSizeX * 0.10;
-  const boxPadY = iconSizeY * 0.10;
-  const shapes = rows.filter((r) => r.in_pool).map((r) => ({
-    type: "circle", xref: "x", yref: "y",
-    x0: r.matchup_mean - iconSizeX / 2 - boxPadX,
-    x1: r.matchup_mean + iconSizeX / 2 + boxPadX,
-    y0: r.synergy_mean - iconSizeY / 2 - boxPadY,
-    y1: r.synergy_mean + iconSizeY / 2 + boxPadY,
-    line: { color: "#3DD9A4", width: 3 },
-    fillcolor: "rgba(0, 158, 115, 0.08)",
-    layer: "above",
-  }));
+  // Pool champs are marked with a green ring rendered via CSS drop-shadow
+  // on the icon itself (see #blind-scatter image[data-in-pool="1"] in
+  // style.css). Drawing the ring on the image keeps it stuck to its champ
+  // — no Plotly shapes that could overlap into venn diagrams when two pool
+  // icons sit on top of each other.
+  const shapes = [];
 
   // Champion icons via layout.images (one image per point). Pool champs
   // are pushed last so Plotly renders them on top of non-pool icons —
