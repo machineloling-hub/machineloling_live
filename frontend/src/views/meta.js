@@ -1,6 +1,6 @@
 import { state } from "../state.js";
 import { getChampionsData } from "../api.js";
-import { ROLES, RANK_LABELS, RANK_COLORS, champSlug } from "../utils.js";
+import { ROLES, RANK_LABELS, RANK_COLORS, ROLE_ICON_URL, champSlug } from "../utils.js";
 
 // ──────────────────────────────────────────────────────────────────────────
 // PLAYRATE BY RANK — single big chart per role with Sankey-style ribbons.
@@ -35,11 +35,29 @@ function _escape(s) {
 function _slice(rank, role) {
   // by_patch[rank][role] may be present but empty (upstream data gap for
   // e.g. SUP at diamond); fall back to the per-role default in that case
-  // so the chart isn't blank.
+  // so the chart isn't blank. `default[role]` doesn't carry a per-champ
+  // games count, so we estimate one from sibling roles at the same rank
+  // (solo-queue role totals are roughly equal) — otherwise tooltips show
+  // "0 games".
   const d = getChampionsData();
   const per = d && d.by_patch && d.by_patch[rank] ? d.by_patch[rank][role] : null;
   if (per && per.length) return per;
-  return (d && d.default && d.default[role]) || [];
+  const fallback = (d && d.default && d.default[role]) || [];
+  if (!fallback.length) return [];
+  if (fallback[0] && fallback[0].games != null) return fallback;
+  let est = 0, n = 0;
+  for (const r of ROLES) {
+    const slice = d && d.by_patch && d.by_patch[rank] ? d.by_patch[rank][r] : null;
+    if (slice && slice.length) {
+      est += slice.reduce((s, c) => s + (c.games || 0), 0);
+      n += 1;
+    }
+  }
+  const total = n > 0 ? Math.round(est / n) : 0;
+  return fallback.map((c) => ({
+    ...c,
+    games: c.games || (total > 0 ? Math.round((c.pick_rate || 0) * total) : 0),
+  }));
 }
 
 function _initMetaSelectedForRole(role, ranks) {
@@ -293,9 +311,11 @@ function refreshMeta() {
 
   // Top: role sub-tab bar + Show-all toggle.
   let tabs = `<div class="meta-controls-row">
-    <div class="meta-role-tabs">`;
+    <div class="role-strip meta-role-tabs" role="tablist" aria-label="Role">`;
   for (const r of roles) {
-    tabs += `<button class="meta-role-tab ${r === role ? "active" : ""}" data-role="${r}">${r}</button>`;
+    tabs += `<button class="role-tile meta-role-tab ${r === role ? "active" : ""}" data-role="${r}" role="tab" aria-selected="${r === role}" title="${r}">`;
+    tabs += `<img src="${ROLE_ICON_URL(r)}" alt="${r}">`;
+    tabs += `</button>`;
   }
   tabs += `</div>
     <label class="meta-show-all-label"><input type="checkbox" id="meta-show-all" ${state.metaShowAll ? "checked" : ""}> <span>Show all (overrides selection)</span></label>

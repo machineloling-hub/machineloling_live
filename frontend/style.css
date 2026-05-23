@@ -529,7 +529,7 @@ button { font-family: inherit; }
   padding: 3px;
   background: var(--surface-1);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--r-md);
+  border-radius: 8px;
 }
 .role-tile {
   flex: 1 1 0;
@@ -539,8 +539,8 @@ button { font-family: inherit; }
   justify-content: center;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--r-sm);
-  padding: 6px 0;
+  border-radius: 4px;
+  padding: 7px 0;
   cursor: pointer;
   transition: background var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
 }
@@ -569,7 +569,7 @@ button { font-family: inherit; }
   max-width: 100%;
 }
 #role-tabs .role-tile {
-  padding: 4px 10px;
+  padding: 5px 10px;
 }
 #role-tabs .role-tile img { width: 16px; height: 16px; }
 
@@ -1347,21 +1347,9 @@ button { font-family: inherit; }
   display: flex; align-items: center; justify-content: space-between;
   gap: var(--s-4); flex-wrap: wrap;
 }
-.meta-role-tabs { display: flex; gap: 2px; padding: 3px; background: var(--surface-1); border-radius: var(--r-pill); border: 1px solid var(--border-subtle); }
-.meta-role-tab {
-  padding: 5px 14px;
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-radius: var(--r-pill);
-  font-size: var(--fs-sm);
-  font-weight: 500;
-  transition: background var(--dur-fast), color var(--dur-fast);
-  font-family: inherit;
-}
-.meta-role-tab:hover { background: var(--surface-2); color: var(--text); }
-.meta-role-tab.active { background: var(--accent-soft); color: var(--accent-strong); }
+.meta-role-tabs.role-strip { width: max-content; max-width: 100%; }
+/* Legacy text-button styles kept as no-ops; the .role-strip / .role-tile
+   rules above own all the visual styling now. */
 .meta-show-all-label {
   color: var(--text-muted); font-size: var(--fs-sm);
   cursor: pointer; display: flex; align-items: center; gap: var(--s-1);
