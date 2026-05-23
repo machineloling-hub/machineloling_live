@@ -1,17 +1,17 @@
-import { state } from "./state.js";
-import { $, $$, setStatus, ROLES, ROLE_ICON_URL, RANK_LABELS, RANK_COLORS, esc } from "./utils.js";
-import { apiFetch, loadChampionsFor, topNChampions } from "./api.js";
-import { makeMultiSelect, makeSingleSelect } from "./widgets/multiselect.js";
-import { refreshCoverage, renderRoleSubTabs } from "./views/coverage.js";
-import { refreshHealth } from "./views/health.js";
-import { refreshBlindability } from "./views/blind.js";
-import { refreshComparer, _cmpRenderTables } from "./views/comparer.js";
-import { refreshBans } from "./views/bans.js";
+import { state } from "./state.js?v=43";
+import { $, $$, setStatus, ROLES, ROLE_ICON_URL, RANK_LABELS, RANK_COLORS, esc } from "./utils.js?v=43";
+import { apiFetch, loadChampionsFor, topNChampions } from "./api.js?v=43";
+import { makeMultiSelect, makeSingleSelect } from "./widgets/multiselect.js?v=43";
+import { refreshCoverage, renderRoleSubTabs } from "./views/coverage.js?v=43";
+import { refreshHealth } from "./views/health.js?v=43";
+import { refreshBlindability } from "./views/blind.js?v=43";
+import { refreshComparer, _cmpRenderTables } from "./views/comparer.js?v=43";
+import { refreshBans } from "./views/bans.js?v=43";
 import {
   refreshBuilder, refreshComboCount, buildPools, renderBuilderResults,
-} from "./views/builder.js";
-import { refreshReplacements, renderReplPreview } from "./views/replacements.js";
-import { refreshMeta } from "./views/meta.js";
+} from "./views/builder.js?v=43";
+import { refreshReplacements, renderReplPreview } from "./views/replacements.js?v=43";
+import { refreshMeta } from "./views/meta.js?v=43";
 
 const SYNERGY_DEFAULT_PARTNER = {
   "SUP": "ADC", "ADC": "SUP",

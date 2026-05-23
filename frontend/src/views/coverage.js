@@ -1,7 +1,7 @@
-import { state } from "../state.js";
-import { apiFetch } from "../api.js";
-import { $, ROLES, ROLE_ICON_URL, esc, fmtSign, champImg, setStatus } from "../utils.js";
-import { drawPoolHeatmap } from "../widgets/heatmap.js";
+import { state } from "../state.js?v=43";
+import { apiFetch } from "../api.js?v=43";
+import { $, ROLES, ROLE_ICON_URL, esc, fmtSign, champImg, setStatus } from "../utils.js?v=43";
+import { drawPoolHeatmap } from "../widgets/heatmap.js?v=43";
 
 
 // ──────────────────────────────────────────────────────────────────────────
