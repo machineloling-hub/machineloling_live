@@ -1086,6 +1086,128 @@ button { font-family: inherit; }
   font-size: var(--fs-body);
 }
 
+/* ── Expand Your Pool tab ─────────────────────────────────────────────── */
+
+/* Weights collapsible (Score weights moved from Pool Health) */
+.weights-collapsible {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: var(--s-2) var(--s-3);
+  margin: 0 0 var(--s-3);
+}
+.weights-collapsible > summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: var(--s-1) 0;
+  user-select: none;
+}
+.weights-collapsible[open] > summary { margin-bottom: var(--s-2); }
+.weights-collapsible .weights-box {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: var(--s-2) var(--s-4);
+}
+.weights-collapsible .weights-box label {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-sm);
+  gap: 2px;
+}
+.weights-collapsible .weights-box input[type="range"] { width: 100%; }
+
+/* Top-3 picks cards */
+.repl-top-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--s-2);
+  margin: 0 0 var(--s-4);
+}
+.repl-top-card {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+  text-align: left;
+  padding: var(--s-3);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  transition: transform 80ms, border-color 80ms, background 80ms;
+}
+.repl-top-card:hover { transform: translateY(-1px); background: var(--surface-2); }
+.repl-top-card.tone-win  { border-left-color: var(--c-pos); }
+.repl-top-card.tone-slim { border-left-color: var(--accent); }
+.repl-top-card.tone-loss { border-left-color: var(--c-neg); }
+.repl-top-rank {
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  width: 28px;
+  text-align: right;
+}
+.repl-top-icon img { width: 44px; height: 44px; border-radius: 50%; display: block; }
+.repl-top-body { min-width: 0; }
+.repl-top-name { font-weight: 700; font-size: var(--fs-body); }
+.repl-top-pp {
+  margin-top: 2px;
+  font-size: var(--fs-body);
+  font-weight: 700;
+}
+.repl-top-card.tone-win  .repl-top-pp { color: var(--c-pos); }
+.repl-top-card.tone-slim .repl-top-pp { color: var(--accent-strong); }
+.repl-top-card.tone-loss .repl-top-pp { color: var(--c-neg); }
+.repl-top-why {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+
+/* Candidates table — pillar pills + overall column */
+.repl-table th { white-space: nowrap; }
+.repl-table .repl-cand { white-space: nowrap; }
+.repl-table .repl-overall {
+  text-align: center;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: var(--fs-body);
+}
+.repl-table .repl-overall.tone-win  { color: var(--c-pos); }
+.repl-table .repl-overall.tone-slim { color: var(--accent-strong); }
+.repl-table .repl-overall.tone-loss { color: var(--c-neg); }
+.repl-table .repl-overall-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-weight: 400;
+  margin-top: 1px;
+}
+.repl-table .repl-pill {
+  text-align: center;
+  padding: 4px 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.repl-table .repl-pill.tone-win     { color: var(--c-pos); }
+.repl-table .repl-pill.tone-loss    { color: var(--c-neg); }
+.repl-table .repl-pill.tone-neutral { color: var(--text-muted); }
+.repl-table .repl-arrow { display: inline-block; margin-right: 4px; font-size: 12px; }
+.repl-table .cell-na { color: var(--text-dim); text-align: center; }
+.repl-table tr.selected td { background: rgba(111, 226, 181, 0.08); }
+.repl-table tbody tr { cursor: pointer; }
+.repl-table tbody tr:hover td { background: var(--surface-2); }
+.repl-table tbody tr.selected:hover td { background: rgba(111, 226, 181, 0.14); }
+
 /* Equation card */
 .eq-box {
   background: var(--surface-1);

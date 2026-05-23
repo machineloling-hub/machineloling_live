@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=43">
+<link rel="stylesheet" href="style.css?v=44">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -93,11 +93,10 @@
   <main id="main">
     <div class="tabs-top">
       <button class="tab-btn active" data-view="welcome">Welcome</button>
-      <button class="tab-btn" data-view="health">Pool Health</button>
       <button class="tab-btn" data-view="matchup">Matchup Coverage</button>
       <button class="tab-btn" data-view="synergy">Synergy Coverage</button>
       <button class="tab-btn" data-view="bans">Ban Recommender</button>
-      <button class="tab-btn" data-view="replacements">Replacement Finder</button>
+      <button class="tab-btn" data-view="replacements">Expand Your Pool</button>
       <button class="tab-btn" data-view="builder">Pool Builder</button>
       <button class="tab-btn" data-view="blindability">Blindability</button>
       <button class="tab-btn" data-view="comparer">Individual Champ Compare</button>
@@ -120,10 +119,6 @@
         <div class="welcome-group">
           <h3>Explore your current pool</h3>
           <div class="welcome-tiles">
-            <button class="welcome-tile" data-go="health">
-              <span class="wt-title">Pool Health</span>
-              <span class="wt-desc">One-page summary: how strong is your pool overall, in lane, in synergy, and how blindable is it?</span>
-            </button>
             <button class="welcome-tile" data-go="matchup">
               <span class="wt-title">Matchup Coverage</span>
               <span class="wt-desc">Heatmap of your pool's win-rate edge against every common enemy champion, by role.</span>
@@ -143,8 +138,8 @@
           <h3>Improve your pool</h3>
           <div class="welcome-tiles">
             <button class="welcome-tile" data-go="replacements">
-              <span class="wt-title">Replacement Finder</span>
-              <span class="wt-desc">Ranks every champion by how much they'd improve your pool if added or swapped in.</span>
+              <span class="wt-title">Expand Your Pool</span>
+              <span class="wt-desc">Find the best champion to add next, ranked by what matters to you.</span>
             </button>
           </div>
         </div>
@@ -212,30 +207,6 @@
       <div id="coverage-mvps"></div>
     </section>
 
-    <!-- Pool Health -->
-    <section id="view-health" class="view">
-      <fieldset class="weights-box">
-        <legend>Score weights <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="Total = w·in-lane + w·out-of-lane + w·synergy + w·blindability. Drives Pool Health, Replacement Finder, Pool Builder, and Redundancy ranking.">?</span></legend>
-        <label>In-lane matchup: <span id="w-in-lane-val">0.7</span>
-          <input id="w-in-lane" type="range" min="0" max="1" step="0.1" value="0.7">
-        </label>
-        <label>Out-of-lane matchup: <span id="w-out-lane-val">0.5</span>
-          <input id="w-out-lane" type="range" min="0" max="1" step="0.1" value="0.5">
-        </label>
-        <label>Overall synergy: <span id="w-synergy-val">1.0</span>
-          <input id="w-synergy" type="range" min="0" max="1" step="0.1" value="1.0">
-        </label>
-        <label>Blindability: <span id="w-blind-val">0.9</span>
-          <input id="w-blind" type="range" min="0" max="1" step="0.1" value="0.9">
-        </label>
-      </fieldset>
-      <div id="health-strength"></div>
-      <div id="health-equations" class="eq-box"></div>
-      <h3 class="section-h">Pool redundancy</h3>
-      <div id="health-redundancy-table"></div>
-      <div id="health-redundancy-heatmap"></div>
-    </section>
-
     <!-- Blindability -->
     <section id="view-blindability" class="view">
       <div id="blind-scatter"></div>
@@ -294,33 +265,43 @@
       </div>
     </section>
 
-    <!-- Replacement Finder -->
+    <!-- Expand Your Pool (a.k.a. Replacement Finder, add-only) -->
     <section id="view-replacements" class="view">
-      <div class="row-controls">
-        <label>Mode
-          <select id="repl-mode">
-            <option value="replace" selected>Replace one pool member</option>
-            <option value="add">Add to pool (no removal)</option>
-          </select>
-        </label>
-      </div>
-      <div id="repl-locked-wrap"></div>
-      <div id="repl-summary"></div>
-      <div id="repl-equation" class="eq-box"></div>
-      <div id="repl-strength"></div>
-      <div class="row-controls" style="margin-top:8px;">
-        <label>Heatmap view (new pool)
-          <select id="repl-view"></select>
-        </label>
-      </div>
-      <div id="repl-new-pool-hm"></div>
-      <div class="hm-key">
-        <span class="key-item">Bold cells = top-X picks</span>
-        <span class="key-item">Faint cells = rest of pool</span>
-        <span class="key-item">Color = winrate edge <span class="info-tip" tabindex="0" role="button" aria-label="More info" data-tip="Bold = top-X picks for that column (used for scoring). Faint = other pool members shown for context. Cell color is Δ pp — the winrate delta vs that opponent (or partner).">?</span></span>
-      </div>
-      <h3 class="section-h">Ranked candidates <span style="color:#888;font-weight:normal;font-size:13px;">(click to preview — does not change your pool)</span></h3>
+      <details class="weights-collapsible" open>
+        <summary>How much each thing matters to you</summary>
+        <fieldset class="weights-box">
+          <label>Lane matchups: <span id="w-in-lane-val">0.7</span>
+            <input id="w-in-lane" type="range" min="0" max="1" step="0.1" value="0.7">
+          </label>
+          <label>Vs other lanes: <span id="w-out-lane-val">0.5</span>
+            <input id="w-out-lane" type="range" min="0" max="1" step="0.1" value="0.5">
+          </label>
+          <label>Team synergy: <span id="w-synergy-val">1.0</span>
+            <input id="w-synergy" type="range" min="0" max="1" step="0.1" value="1.0">
+          </label>
+          <label>Safe to first-pick: <span id="w-blind-val">0.9</span>
+            <input id="w-blind" type="range" min="0" max="1" step="0.1" value="0.9">
+          </label>
+        </fieldset>
+      </details>
+      <div id="repl-top-picks"></div>
+      <h3 class="section-h">All candidates <span style="color:#888;font-weight:normal;font-size:13px;">(click a row to preview — your pool is not changed)</span></h3>
       <div id="repl-table"></div>
+      <div id="repl-preview-section">
+        <div id="repl-preview-header"></div>
+        <div id="repl-strength"></div>
+        <div class="row-controls" style="margin-top:8px;">
+          <label>Heatmap view (new pool)
+            <select id="repl-view"></select>
+          </label>
+        </div>
+        <div id="repl-new-pool-hm"></div>
+        <div class="hm-key">
+          <span class="key-item">Bold cells = top-X picks</span>
+          <span class="key-item">Faint cells = rest of pool</span>
+          <span class="key-item">Color = winrate edge <span class="info-tip" tabindex="0" role="button" aria-label="More info" data-tip="Bold = top-X picks for that column (used for scoring). Faint = other pool members shown for context. Cell color is Δ pp — the winrate delta vs that opponent (or partner).">?</span></span>
+        </div>
+      </div>
     </section>
 
     <!-- Comparer (champion correlation explorer) -->
@@ -369,7 +350,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=43"></script>
+<script type="module" src="src/main.js?v=44"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>

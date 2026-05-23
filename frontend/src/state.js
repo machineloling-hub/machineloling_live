@@ -22,9 +22,7 @@ const state = {
   pbBuiltRows: null,    // last build result
   pbSelectedId: null,
   pbView: null,                   // null → falls back to mirror matchup on first render
-  // replacement
-  replMode: "replace",
-  replLocked: [],
+  // replacement (add-only mode now)
   replView: null,                 // null → falls back to mirror matchup on first render
   replRanked: null,        // last /api/replacements rows
   replSelectedCand: null,  // currently-selected candidate for preview

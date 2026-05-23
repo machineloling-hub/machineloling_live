@@ -50,7 +50,9 @@ for (const f of listJs(srcRoot)) {
   const rel = path.relative(srcRoot, f).replaceAll("\\", "/");
   for (const imp of importsOf(f)) {
     if (!imp.from.startsWith(".")) continue;
-    const target = path.resolve(path.dirname(f), imp.from);
+    // Strip any ?v=NN cache-bust query string before resolving on disk.
+    const fromPath = imp.from.replace(/\?.*$/, "");
+    const target = path.resolve(path.dirname(f), fromPath);
     if (!fs.existsSync(target)) {
       console.log(`MISSING ${rel} -> ${imp.from} (no such file)`);
       bad++;

@@ -334,9 +334,7 @@ function renderReplStrengthPanel(data, live, basePoolSize, newPoolSize) {
   if (!live || !data?.base_scores || !selectedRow) { wrap.innerHTML = ""; return; }
 
   const baseScores = data.base_scores;
-  const action = state.replMode === "add"
-    ? `Add ${selectedRow.candidate}`
-    : `Drop ${selectedRow.remove ?? "?"} → Add ${selectedRow.candidate}`;
+  const action = `Add ${selectedRow.candidate}`;
 
   wrap.innerHTML = `
     <h3 class="section-h" style="margin:8px 0 4px;">Pool strength · ${action}</h3>

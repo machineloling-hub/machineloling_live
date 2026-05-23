@@ -18,7 +18,7 @@ import { drawPoolHeatmap } from "../widgets/heatmap.js?v=43";
 
 // A best pool pick that beats a column by ≥ this many winrate points counts
 // as "answered". 1.0 pp ≈ "I have an actual counter, not a coin flip."
-const ANSWERED_DELTA_PP = 1.0;
+const ANSWERED_DELTA_PP = 0.0;
 
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -138,7 +138,9 @@ function renderHeadlineCard(cov) {
     div.innerHTML = `<div class="empty-msg">Add champions to your pool to see coverage.</div>`;
     return;
   }
-  const noun = state.view === "matchup" ? "opponents" : "partners";
+  const isSyn = state.view === "synergy";
+  const noun = isSyn ? "teammates" : "opponents";
+  const verb = isSyn ? "synergises with" : "answers";
   const nTotal = cov.cols.length;
   const answeredFlags = cov.col_max_pp.map((v) => v != null && v >= ANSWERED_DELTA_PP);
   const nAnswered = answeredFlags.filter(Boolean).length;
@@ -164,7 +166,7 @@ function renderHeadlineCard(cov) {
     <div class="cov-headline-card">
       <div class="cov-headline-main">
         <div class="cov-headline-big">
-          Your pool answers <strong>${nAnswered} / ${nTotal}</strong> common ${noun}.
+          Your pool ${verb} <strong>${nAnswered} / ${nTotal}</strong> common ${noun}.
         </div>
         <div class="cov-headline-mid">
           Average winning edge on the ones you handle: <strong>${avgEdgeText}</strong> winrate.

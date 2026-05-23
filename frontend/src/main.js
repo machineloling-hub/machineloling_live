@@ -1,17 +1,16 @@
-import { state } from "./state.js?v=43";
-import { $, $$, setStatus, ROLES, ROLE_ICON_URL, RANK_LABELS, RANK_COLORS, esc } from "./utils.js?v=43";
-import { apiFetch, loadChampionsFor, topNChampions } from "./api.js?v=43";
-import { makeMultiSelect, makeSingleSelect } from "./widgets/multiselect.js?v=43";
-import { refreshCoverage, renderRoleSubTabs } from "./views/coverage.js?v=43";
-import { refreshHealth } from "./views/health.js?v=43";
-import { refreshBlindability } from "./views/blind.js?v=43";
-import { refreshComparer, _cmpRenderTables } from "./views/comparer.js?v=43";
-import { refreshBans } from "./views/bans.js?v=43";
+import { state } from "./state.js?v=44";
+import { $, $$, setStatus, ROLES, ROLE_ICON_URL, RANK_LABELS, RANK_COLORS, esc } from "./utils.js?v=44";
+import { apiFetch, loadChampionsFor, topNChampions } from "./api.js?v=44";
+import { makeMultiSelect, makeSingleSelect } from "./widgets/multiselect.js?v=44";
+import { refreshCoverage, renderRoleSubTabs } from "./views/coverage.js?v=44";
+import { refreshBlindability } from "./views/blind.js?v=44";
+import { refreshComparer, _cmpRenderTables } from "./views/comparer.js?v=44";
+import { refreshBans } from "./views/bans.js?v=44";
 import {
   refreshBuilder, refreshComboCount, buildPools, renderBuilderResults,
-} from "./views/builder.js?v=43";
-import { refreshReplacements, renderReplPreview } from "./views/replacements.js?v=43";
-import { refreshMeta } from "./views/meta.js?v=43";
+} from "./views/builder.js?v=44";
+import { refreshReplacements, renderReplPreview } from "./views/replacements.js?v=44";
+import { refreshMeta } from "./views/meta.js?v=44";
 
 const SYNERGY_DEFAULT_PARTNER = {
   "SUP": "ADC", "ADC": "SUP",
@@ -26,11 +25,10 @@ function defaultOtherRole(role, view) {
 // Friendly labels shown in the topbar crumb when each tab is active.
 const VIEW_LABELS = {
   welcome:      "Welcome",
-  health:       "Pool Health",
   matchup:      "Matchup Coverage",
   synergy:      "Synergy Coverage",
   bans:         "Ban Recommender",
-  replacements: "Replacement Finder",
+  replacements: "Expand Your Pool",
   builder:      "Pool Builder",
   blindability: "Blindability",
   comparer:     "Individual Champ Compare",
@@ -266,7 +264,6 @@ async function _refreshImpl() {
   refreshPending = false;
   try {
     if (state.view === "matchup" || state.view === "synergy") await refreshCoverage();
-    else if (state.view === "health") await refreshHealth();
     else if (state.view === "blindability") await refreshBlindability();
     else if (state.view === "bans") await refreshBans();
     else if (state.view === "builder") await refreshBuilder();
@@ -346,7 +343,6 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   // Role
   $("#role").addEventListener("change", async (e) => {
     state.role = e.target.value;
-    state.replLocked = [];
     state.replView = null;          // reset → mirror matchup of new role
     state.pbView = null;            // same for Pool Builder preview
     state.pbDefinite = []; state.pbMaybe = []; state.pbBuiltRows = null; state.pbSelectedId = null;
@@ -365,7 +361,7 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   });
 
   $("#clear-pool").addEventListener("click", () => {
-    state.pool = []; state.replLocked = []; poolMS.renderChips(); refresh();
+    state.pool = []; poolMS.renderChips(); refresh();
   });
 
   $("#top-x").addEventListener("input", (e) => {
@@ -468,14 +464,7 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   });
   $("#pb-build").addEventListener("click", () => buildPools());
 
-  // Replacement mode
-  $("#repl-mode").addEventListener("change", (e) => {
-    state.replMode = e.target.value;
-    // Mode switch invalidates the previous selection — different candidate
-    // sets and rankings, so default back to the top of the new list.
-    state.replSelectedCand = null;
-    if (state.view === "replacements") refresh();
-  });
+  // Replacement mode is no longer user-selectable — always "add".
 
   // View selectors (Pool Builder + Replacement Finder)
   $("#pb-view").addEventListener("change", (e) => {
