@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=42">
+<link rel="stylesheet" href="style.css?v=43">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -200,16 +200,16 @@
     <!-- Coverage tab content (Matchup + Synergy share this) -->
     <section id="view-coverage" class="view">
       <div class="tabs-sub" id="role-tabs"></div>
-      <div id="stats-banner"></div>
+      <div id="coverage-headline"></div>
+      <div id="coverage-problems"></div>
       <div id="heatmap"></div>
       <div class="hm-key">
-        <span class="key-item">Bold cells = your top-X picks</span>
-        <span class="key-item">Faint cells = rest of pool</span>
-        <span class="key-item">Color = winrate edge</span>
-        <span class="key-item">Bar above = column strength <span class="info-tip" tabindex="0" role="button" aria-label="More info" data-tip="Bold = top-X picks for that column (used for scoring). Faint = other pool members shown for context. Cell color is Δ pp (winrate edge vs that opponent/partner). Bar above each column is the top-X mean z, which drives the column sort.">?</span></span>
+        <span class="key-item"><span class="hm-key-swatch swatch-bold"></span>Bold cell = your top picks</span>
+        <span class="key-item"><span class="hm-key-swatch swatch-faint"></span>Faint cell = rest of pool</span>
+        <span class="key-item"><span class="hm-key-swatch swatch-grad"></span>Cell color = winrate edge (blue win → red loss)</span>
+        <span class="key-item">Bar above = average edge of your top picks vs that opponent</span>
       </div>
-      <div id="topx-table"></div>
-      <div id="uncovered"></div>
+      <div id="coverage-mvps"></div>
     </section>
 
     <!-- Pool Health -->
@@ -369,7 +369,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=42"></script>
+<script type="module" src="src/main.js?v=43"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>

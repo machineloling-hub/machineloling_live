@@ -7,6 +7,13 @@ function drawPoolHeatmap(div, opts) {
     rows, cols, mat, top_idx_mat, top_x = 0,
     col_pick_rates,
     bar_z = null, bar_pp = null, barLabel = "",
+    barExplain = null,         // optional override for the (?) tooltip on the
+                               // bar pane's left edge. Defaults to the legacy
+                               // "Top-X z" explanation kept for callers that
+                               // still pass z values (Pool Builder etc.).
+    boundaryLabel = null,      // optional override for the text inside the
+                               // covered/uncovered gap column. Defaults to
+                               // "z = <threshold>".
     colorRange = 3.0,
     coveredBoundary = null,    // index of first uncovered column, or null
     threshold = null,
@@ -175,13 +182,13 @@ function drawPoolHeatmap(div, opts) {
     }
   }
 
-  // "z = X.X" label centered in the gap column, in the bar pane just BELOW
-  // the horizontal threshold line (so it doesn't get covered by it).
+  // "z = X.X" (or caller-supplied) label centered in the gap column, in the
+  // bar pane just BELOW the horizontal threshold line.
   if (split && threshold != null) {
     annotations.push({
       xref: "x", yref: "y2",                   // bar pane's y-axis (z values)
       x: gapJ, y: threshold,
-      text: `z = ${threshold.toFixed(1)}`,
+      text: boundaryLabel != null ? boundaryLabel : `z = ${threshold.toFixed(1)}`,
       showarrow: false,
       textangle: -90,
       font: { size: 11, color: "#E6C978", weight: 700 },
@@ -345,13 +352,14 @@ function drawPoolHeatmap(div, opts) {
       font: { size: 11, color: "#6FE2B5" },
       bgcolor: "rgba(26,34,54,0.95)", bordercolor: "rgba(255,255,255,0.10)",
       borderpad: 3, borderwidth: 1,
-      hovertext:
-        "<b>Top-" + (top_x || "X") + " z</b> = how strong your pool's " +
-        (top_x || "X") + " best counters are vs this opponent, scaled by " +
-        "the spread of all " + (state.role || "role") + " picks against them. " +
-        "+1 = one standard deviation better than the role's average matchup. " +
-        "0 = average. Negative = your pool struggles into them. " +
-        "(Drives the column sort + the orange threshold line.)",
+      hovertext: barExplain != null
+        ? barExplain
+        : "<b>Top-" + (top_x || "X") + " z</b> = how strong your pool's " +
+          (top_x || "X") + " best counters are vs this opponent, scaled by " +
+          "the spread of all " + (state.role || "role") + " picks against them. " +
+          "+1 = one standard deviation better than the role's average matchup. " +
+          "0 = average. Negative = your pool struggles into them. " +
+          "(Drives the column sort + the orange threshold line.)",
       captureevents: true,
     });
   }
