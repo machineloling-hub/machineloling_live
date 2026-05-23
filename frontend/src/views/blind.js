@@ -69,8 +69,9 @@ async function refreshBlindability() {
   const iconSizeX = iconPx * xRangeSize / innerWPx;
   const iconSizeY = iconPx * yRangeSize / innerHPx;
 
-  // Green BOX (rectangle shape) around each pool champ, drawn under the icon.
-  // Slightly bigger than the icon so it forms a visible border.
+  // Green CIRCLE outline around each pool champ. Layered "above" so the
+  // outline stays visible over neighbouring non-pool icons; the fill is kept
+  // near-transparent so the pool icon underneath isn't dimmed.
   const boxPadX = iconSizeX * 0.10;
   const boxPadY = iconSizeY * 0.10;
   const shapes = rows.filter((r) => r.in_pool).map((r) => ({
@@ -80,8 +81,8 @@ async function refreshBlindability() {
     y0: r.synergy_mean - iconSizeY / 2 - boxPadY,
     y1: r.synergy_mean + iconSizeY / 2 + boxPadY,
     line: { color: "#3DD9A4", width: 3 },
-    fillcolor: "rgba(0, 158, 115, 0.15)",
-    layer: "below",
+    fillcolor: "rgba(0, 158, 115, 0.08)",
+    layer: "above",
   }));
 
   // Champion icons via layout.images (one image per point). Pool champs
