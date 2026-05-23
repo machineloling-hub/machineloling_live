@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=41">
+<link rel="stylesheet" href="style.css?v=42">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -67,25 +67,9 @@
       <button id="clear-pool" class="btn-sm">Clear pool</button>
     </label>
 
-    <label>Top-X picks per opponent <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="Only your pool's X best champions against each opponent (or partner) count toward the score. Lower X rewards a single strong counter; higher X rewards depth.">?</span> <span id="top-x-val">3</span>
+    <label>Picks considered per matchup/synergy <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="Only your pool's X best champions against each opponent (or partner) count toward the score. Lower X rewards a single strong counter; higher X rewards depth.">?</span> <span id="top-x-val">3</span>
       <input id="top-x" type="range" min="1" max="8" step="1" value="3">
     </label>
-
-    <fieldset class="weights-box">
-      <legend>Score weights <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="Total = w·in-lane + w·out-of-lane + w·synergy + w·blindability. Drives Pool Health, Replacement Finder, Pool Builder, and Redundancy ranking.">?</span></legend>
-      <label>In-lane matchup: <span id="w-in-lane-val">0.7</span>
-        <input id="w-in-lane" type="range" min="0" max="1" step="0.1" value="0.7">
-      </label>
-      <label>Out-of-lane matchup: <span id="w-out-lane-val">0.5</span>
-        <input id="w-out-lane" type="range" min="0" max="1" step="0.1" value="0.5">
-      </label>
-      <label>Overall synergy: <span id="w-synergy-val">1.0</span>
-        <input id="w-synergy" type="range" min="0" max="1" step="0.1" value="1.0">
-      </label>
-      <label>Blindability: <span id="w-blind-val">0.9</span>
-        <input id="w-blind" type="range" min="0" max="1" step="0.1" value="0.9">
-      </label>
-    </fieldset>
 
     <div class="field">
       <span class="field-label">Rank bracket</span>
@@ -96,10 +80,10 @@
 
     <label class="checkbox-label">
       <input id="pr-weighted" type="checkbox" checked>
-      <strong>PR-weighted scoring <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="Each opponent/partner column is weighted by its solo-queue pick rate, so common matchups count more than rare ones.">?</span></strong>
+      <strong>Consider pick rates <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="Each opponent/partner column is weighted by its solo-queue pick rate, so common matchups count more than rare ones.">?</span></strong>
     </label>
 
-    <label>Opponent / partner pick-rate floor: <span id="pr-floor-val">0.5%</span>
+    <label>Lowest pickrate considered: <span id="pr-floor-val">0.5%</span>
       <input id="pr-floor" type="range" min="0.1" max="2" step="0.05" value="0.5">
     </label>
 
@@ -230,6 +214,21 @@
 
     <!-- Pool Health -->
     <section id="view-health" class="view">
+      <fieldset class="weights-box">
+        <legend>Score weights <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="Total = w·in-lane + w·out-of-lane + w·synergy + w·blindability. Drives Pool Health, Replacement Finder, Pool Builder, and Redundancy ranking.">?</span></legend>
+        <label>In-lane matchup: <span id="w-in-lane-val">0.7</span>
+          <input id="w-in-lane" type="range" min="0" max="1" step="0.1" value="0.7">
+        </label>
+        <label>Out-of-lane matchup: <span id="w-out-lane-val">0.5</span>
+          <input id="w-out-lane" type="range" min="0" max="1" step="0.1" value="0.5">
+        </label>
+        <label>Overall synergy: <span id="w-synergy-val">1.0</span>
+          <input id="w-synergy" type="range" min="0" max="1" step="0.1" value="1.0">
+        </label>
+        <label>Blindability: <span id="w-blind-val">0.9</span>
+          <input id="w-blind" type="range" min="0" max="1" step="0.1" value="0.9">
+        </label>
+      </fieldset>
       <div id="health-strength"></div>
       <div id="health-equations" class="eq-box"></div>
       <h3 class="section-h">Pool redundancy</h3>
@@ -370,7 +369,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=40"></script>
+<script type="module" src="src/main.js?v=42"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>
