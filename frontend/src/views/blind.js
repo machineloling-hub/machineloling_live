@@ -48,7 +48,10 @@ async function refreshBlindability() {
   const ylim = [yr[0] - padY, yr[1] + padY];
 
   // Convert icon pixel size to data units for sizex/sizey.
-  const PLOT_W = 760, PLOT_H = 760;
+  // Fill the available container width; pick a height that uses most of
+  // the viewport so the map is no longer a small square.
+  const PLOT_W = Math.max(480, Math.floor(scatterDiv.clientWidth || scatterDiv.parentElement.clientWidth || 760));
+  const PLOT_H = Math.max(520, Math.floor(window.innerHeight * 0.78));
   const innerWPx = PLOT_W - 80 - 30;
   const innerHPx = PLOT_H - 60 - 80;
   const xRangeSize = xlim[1] - xlim[0];
@@ -124,8 +127,21 @@ async function refreshBlindability() {
   });
 
   _attachBlindIconHover(scatterDiv);
+  _attachBlindResize(scatterDiv);
 
   renderBlindTable(data);
+}
+
+// Re-render the blindability scatter on window resize so it keeps filling
+// the available width/height.
+function _attachBlindResize(div) {
+  if (div._blindResizeWired) return;
+  div._blindResizeWired = true;
+  let t = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(t);
+    t = setTimeout(() => { refreshBlindability().catch(() => {}); }, 150);
+  });
 }
 
 // Plotly's hover overlay sits above the imagelayer and swallows mouse
