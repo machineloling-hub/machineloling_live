@@ -18,7 +18,7 @@ import { drawPoolHeatmap } from "../widgets/heatmap.js";
 
 // A best pool pick that beats a column by ≥ this many winrate points counts
 // as "answered". 1.0 pp ≈ "I have an actual counter, not a coin flip."
-const ANSWERED_DELTA_PP = 0.0;
+const ANSWERED_DELTA_PP = 0.045;
 
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -255,8 +255,8 @@ function renderCoverageHeatmap(cov) {
       "<b>Top-" + cov.top_x + " edge</b> = average winrate edge of your " +
       cov.top_x + " best picks vs this opponent. Bars left = your strongest " +
       "matchups, bars right = your weakest. The dashed line is the answered/" +
-      "problem threshold (+" + ANSWERED_DELTA_PP.toFixed(1) + "% winrate).",
-    boundaryLabel: `${ANSWERED_DELTA_PP.toFixed(1)}%`,
+      "problem threshold (+" + ANSWERED_DELTA_PP.toFixed(3) + "% winrate).",
+    boundaryLabel: `${ANSWERED_DELTA_PP.toFixed(3)}%`,
     pairSep: state.view === "matchup" ? "vs" : "w/",
   });
 }

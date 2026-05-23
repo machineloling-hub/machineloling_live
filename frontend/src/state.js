@@ -5,7 +5,7 @@ const state = {
   topX: 3,
   blindPenalty: 0.85,          // legacy alias = weights.blind, kept for old call sites
   weights: { in_lane: 0.7, out_lane: 0.5, synergy: 1.0, blind: 0.9 },
-  prFloor: 0.00045,
+  prFloor: 0.005,
   shrinkAlpha: 0.80,            // 80% hier-shrunk, 20% raw — locked default
   prWeighted: true,
   // tabs

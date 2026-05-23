@@ -216,7 +216,7 @@ function _loadSidebarPrefs() {
       }
       state.blindPenalty = state.weights.blind;
     }
-    if (Number.isFinite(p.prFloor)) state.prFloor = Math.min(0.02, Math.max(0.00005, p.prFloor));
+    if (Number.isFinite(p.prFloor)) state.prFloor = Math.min(0.02, Math.max(0.001, p.prFloor));
     if (typeof p.prWeighted === "boolean") state.prWeighted = p.prWeighted;
     if (typeof p.patch === "string") state.patch = p.patch;
     if (p.pools && typeof p.pools === "object") {
@@ -315,7 +315,7 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   if (_prf) {
     const pct = state.prFloor * 100;
     _prf.value = pct;
-    const decimals = pct < 0.1 ? 3 : ((pct * 10) % 1 === 0 ? 1 : 2);
+    const decimals = (pct * 10) % 1 === 0 ? 1 : 2;
     $("#pr-floor-val").textContent = pct.toFixed(decimals) + "%";
   }
 
@@ -383,15 +383,18 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
     state.prWeighted = e.target.checked; refresh();
   });
 
-  // PR floor slider: free 0.005% steps from 0.005% up to 2%.
+  // PR floor slider snaps to 0.1-step values from 0.1–1.0%, then 0.25-step
+  // values from 1.0–2.0% — coarse stops only. The slider's HTML step is
+  // 0.1 so the natural stops in the lower band are exact; for the upper
+  // band we round to the nearest 0.25.
   $("#pr-floor").addEventListener("input", (e) => {
     let pct = parseFloat(e.target.value);
-    pct = Math.round(pct * 1000) / 1000;
-    if (pct < 0.005) pct = 0.005;
+    pct = pct <= 1.0 ? Math.round(pct * 10) / 10 : Math.round(pct * 4) / 4;
+    if (pct < 0.1) pct = 0.1;
     if (pct > 2.0) pct = 2.0;
     e.target.value = pct;
     state.prFloor = pct / 100;
-    const decimals = pct < 0.1 ? 3 : ((pct * 10) % 1 === 0 ? 1 : 2);
+    const decimals = (pct * 10) % 1 === 0 ? 1 : 2;
     $("#pr-floor-val").textContent = pct.toFixed(decimals) + "%";
     refresh();
   });
