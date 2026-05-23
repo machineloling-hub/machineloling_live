@@ -297,18 +297,16 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
       requestAnimationFrame(() => requestAnimationFrame(_repositionSliderBubbles));
     });
   }
-  // Mobile: tapping outside the sidebar (on the dimmed backdrop) closes it.
-  // The backdrop is rendered as ::after on the shell so we listen on the
-  // shell itself and check the click target is neither sidebar nor toggle.
+  // Mobile: tapping the dimmed backdrop closes the sidebar. The backdrop
+  // is the ::after pseudo-element on the shell, so a click on it reports
+  // e.target === shell. Restricting the check to that exact case avoids
+  // ever swallowing clicks on the toggle button or main content.
   if (shell) {
     shell.addEventListener("click", (e) => {
+      if (e.target !== shell) return;
       if (shell.dataset.sidebar !== "expanded") return;
       const narrow = window.matchMedia && window.matchMedia("(max-width: 700px)").matches;
       if (!narrow) return;
-      const sb = document.getElementById("sidebar");
-      const tb = document.getElementById("sidebar-toggle");
-      if (sb && sb.contains(e.target)) return;
-      if (tb && tb.contains(e.target)) return;
       shell.dataset.sidebar = "collapsed";
       try { localStorage.setItem("sidebar", "collapsed"); } catch (_) { /* private mode */ }
     });
