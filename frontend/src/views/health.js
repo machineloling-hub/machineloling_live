@@ -4,6 +4,7 @@ import {
   $, fmtSign, champImg, champIconUrl,
   MATCHUP_COLOR, SYNERGY_COLOR, BLIND_COLOR,
   plotlyColorscale, tealOrangeBg, corrBg, renderScoreEquation,
+  infoTip,
 } from "../utils.js";
 import { renderPoolStrengthPanel } from "../widgets/strength.js";
 
@@ -127,8 +128,8 @@ function renderRedundancyTable(rd) {
     const ch = rd.rows[i];
     const label = k === 0 ? "Best mix" : k === order.length - 1 ? "Most redundant" : "";
     return `<tr>
-      <td>${k + 1}</td>
-      <td>${champImg(ch, 22)} <b>${ch}</b></td>
+      <td class="rank-col">${k + 1}</td>
+      <td>${champImg(ch, 28)} <b>${ch}</b></td>
       <td style="text-align:center;">${rd.unique_best[i]}</td>
       ${closestCell(i)}
       ${corrCell(rd.matchup_topx ? rd.matchup_topx[i] : null)}
@@ -150,15 +151,15 @@ function renderRedundancyTable(rd) {
     </div>
     <table class="std-table redundancy-table">
       <thead><tr>
-        <th>Rank<br><span class="th-desc">best mix → most redundant</span></th>
+        <th class="rank-col">Rank ${infoTip("best mix \u2192 most redundant")}</th>
         <th>Champion</th>
-        <th>Unique best<br><span class="th-desc"># cols where this champ is sole best</span></th>
-        <th>Closest other (max r)<br><span class="th-desc">peak similarity to another pool member</span></th>
-        <th style="color:${MATCHUP_COLOR};">Matchup r (top-${state.topX})<br><span class="th-desc">mean of top-${state.topX} matchup overlaps</span></th>
-        <th style="color:${MATCHUP_COLOR};">${laneHeader} r (top-${state.topX})<br><span class="th-desc">same, your lane only</span></th>
-        <th style="color:${SYNERGY_COLOR};">Synergy r (top-${state.topX})<br><span class="th-desc">mean of top-${state.topX} synergy overlaps</span></th>
-        <th>Avg r w/ others<br><span class="th-desc">mean correlation vs all others</span></th>
-        <th style="color:${BLIND_COLOR};">Blindability z<br><span class="th-desc">consistency across opponents</span></th>
+        <th>Unique best ${infoTip("# cols where this champ is sole best")}</th>
+        <th>Closest other (max Redundancy) ${infoTip("peak similarity to another pool member")}</th>
+        <th style="color:${MATCHUP_COLOR};">Matchup Redundancy (top-${state.topX}) ${infoTip(`mean of top-${state.topX} matchup overlaps`)}</th>
+        <th style="color:${MATCHUP_COLOR};">${laneHeader} Redundancy (top-${state.topX}) ${infoTip("same, your lane only")}</th>
+        <th style="color:${SYNERGY_COLOR};">Synergy Redundancy (top-${state.topX}) ${infoTip(`mean of top-${state.topX} synergy overlaps`)}</th>
+        <th>Avg Redundancy w/ others ${infoTip("mean correlation vs all others")}</th>
+        <th style="color:${BLIND_COLOR};">Blindability z ${infoTip("consistency across opponents", "left")}</th>
         <th></th>
       </tr></thead>
       <tbody>${tr}</tbody>

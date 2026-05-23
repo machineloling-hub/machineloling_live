@@ -1042,6 +1042,22 @@ button { font-family: inherit; }
   margin-top: 2px;
 }
 
+/* Pool Health → Redundancy table: bigger icon + fonts, slim rank column,
+   2px gutter between the champ icon and its neighbours (rank cell & name). */
+.redundancy-table { font-size: calc(var(--fs-body) + 2px); }
+.redundancy-table th { font-size: calc(var(--fs-xs) + 2px); }
+.redundancy-table th.rank-col,
+.redundancy-table td.rank-col {
+  width: 44px;
+  padding-right: 2px;
+  text-align: center;
+}
+.redundancy-table td.rank-col + td { padding-left: 2px; }
+.redundancy-table td img.champ-icon {
+  width: 28px; height: 28px;
+  margin-right: 2px;
+}
+
 /* Ban tab legend */
 .ban-legend {
   display: flex; flex-wrap: wrap; gap: 6px 18px;
