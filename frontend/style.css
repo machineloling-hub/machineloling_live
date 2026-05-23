@@ -442,7 +442,11 @@ button { font-family: inherit; }
   cursor: help;
   position: relative;
   user-select: none;
-  vertical-align: baseline;
+  /* `middle` keeps the glyph visually centred against neighbouring text
+     of varying heights (slider labels with embedded value spans, checkbox
+     rows where the (?) sits next to a checkbox input). `baseline` left
+     it floating low against those siblings. */
+  vertical-align: middle;
   transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
 }
 .info-tip:hover,
