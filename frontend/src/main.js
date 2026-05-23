@@ -277,22 +277,36 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   _loadSidebarPrefs();
   const _poolRestored = state.pool.length > 0;  // Restore persisted sidebar collapse state (set before any tabs render so
   // the shell doesn't visually jump on first paint).
+  //
+  // Persistence rule: only an explicit toggle-button click on a WIDE viewport
+  // writes the preference. Mobile auto-collapse and tap-outside-to-dismiss
+  // never persist — otherwise a brief visit on a narrow viewport would
+  // leave the desktop sidebar permanently collapsed to a 64px strip on
+  // return visits.
   const shell = document.getElementById("app");
+  const _isNarrow = () => typeof window !== "undefined"
+    && window.matchMedia && window.matchMedia("(max-width: 700px)").matches;
   if (shell) {
-    const savedRaw = (typeof localStorage !== "undefined" && localStorage.getItem("sidebar")) || null;
-    // On narrow viewports (mobile) default to collapsed so the sliding
-    // overlay sidebar doesn't cover the welcome content on first load.
-    const isNarrow = typeof window !== "undefined"
-      && window.matchMedia && window.matchMedia("(max-width: 700px)").matches;
-    const saved = savedRaw || (isNarrow ? "collapsed" : "expanded");
-    shell.dataset.sidebar = saved === "collapsed" ? "collapsed" : "expanded";
+    if (_isNarrow()) {
+      // On narrow viewports the sidebar is a sliding overlay; always start
+      // closed so the welcome content is visible on first paint.
+      shell.dataset.sidebar = "collapsed";
+    } else {
+      const savedRaw = (typeof localStorage !== "undefined" && localStorage.getItem("sidebar")) || null;
+      shell.dataset.sidebar = savedRaw === "collapsed" ? "collapsed" : "expanded";
+    }
   }
   const sidebarToggle = document.getElementById("sidebar-toggle");
   if (sidebarToggle && shell) {
     sidebarToggle.addEventListener("click", () => {
       const next = shell.dataset.sidebar === "collapsed" ? "expanded" : "collapsed";
       shell.dataset.sidebar = next;
-      try { localStorage.setItem("sidebar", next); } catch (_) { /* private mode */ }
+      // Only persist explicit toggles made on a wide viewport. Narrow-viewport
+      // toggles are treated as transient (the overlay is opened/closed by
+      // the user repeatedly during one session).
+      if (!_isNarrow()) {
+        try { localStorage.setItem("sidebar", next); } catch (_) { /* private mode */ }
+      }
       // Sidebar width change → reposition slider bubbles after the
       // layout settles.
       requestAnimationFrame(() => requestAnimationFrame(_repositionSliderBubbles));
@@ -306,10 +320,9 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
     shell.addEventListener("click", (e) => {
       if (e.target !== shell) return;
       if (shell.dataset.sidebar !== "expanded") return;
-      const narrow = window.matchMedia && window.matchMedia("(max-width: 700px)").matches;
-      if (!narrow) return;
+      if (!_isNarrow()) return;
+      // Dismissal — do not persist.
       shell.dataset.sidebar = "collapsed";
-      try { localStorage.setItem("sidebar", "collapsed"); } catch (_) { /* private mode */ }
     });
   }
 
