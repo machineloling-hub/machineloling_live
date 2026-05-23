@@ -285,7 +285,7 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   // return visits.
   const shell = document.getElementById("app");
   const _isNarrow = () => typeof window !== "undefined"
-    && window.matchMedia && window.matchMedia("(max-width: 700px)").matches;
+    && window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
   if (shell) {
     if (_isNarrow()) {
       // On narrow viewports the sidebar is a sliding overlay; always start

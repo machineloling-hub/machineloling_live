@@ -1891,14 +1891,12 @@ tr.in-pool-row td { background: var(--accent-soft); }
   #main { padding: var(--s-4) var(--s-4) var(--s-6); }
 }
 @media (max-width: 900px) {
-  .app-shell { grid-template-columns: var(--sidebar-w-collapsed) 1fr; }
-  .app-shell[data-sidebar="expanded"] { grid-template-columns: var(--sidebar-w) 1fr; }
-  .welcome-title { font-size: 26px; }
-}
-@media (max-width: 700px) {
-  /* Force a single-column layout regardless of sidebar state. Use the
-     attribute selectors too so we beat the 900px-rule's specificity
-     (.app-shell[data-sidebar="..."]). */
+  /* At and below this breakpoint we switch to the mobile overlay layout:
+     a single-column grid, the topbar sticky on top, and the sidebar is
+     a slide-out overlay over the main content. This avoids the 64px
+     desktop "collapsed strip" being mistaken for the page's left margin
+     on phones — which made #main start ~64px from the left and overflow
+     the right edge. */
   .app-shell,
   .app-shell[data-sidebar="expanded"],
   .app-shell[data-sidebar="collapsed"] {
@@ -1909,7 +1907,7 @@ tr.in-pool-row td { background: var(--accent-soft); }
     position: fixed;
     top: var(--topbar-h);
     left: 0; bottom: 0;
-    width: var(--sidebar-w);
+    width: min(var(--sidebar-w), 86vw);
     z-index: 60;
     transform: translateX(-100%);
     transition: transform var(--dur) var(--ease);
@@ -1923,9 +1921,16 @@ tr.in-pool-row td { background: var(--accent-soft); }
     background: var(--overlay);
     z-index: 55;
   }
-  #main { padding: var(--s-3) var(--s-3) var(--s-5); min-width: 0; max-width: 100vw; overflow-x: hidden; }
+  #main {
+    padding: var(--s-3) var(--s-3) var(--s-5);
+    min-width: 0;
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
   .tabs-top { width: 100%; overflow-x: auto; }
   .topbar-brand .brand-name .brand-sub { display: none; }
+  .welcome-title { font-size: 26px; }
   /* Sidebar form controls were sized for a fixed 280px column; on the
      mobile overlay they're fine, but shrink min-widths so nothing forces
      horizontal overflow if any of them escape into #main. */
@@ -1937,6 +1942,11 @@ tr.in-pool-row td { background: var(--accent-soft); }
   #heatmap .plot-container, #blind-scatter .plot-container { max-width: 100%; }
   /* Welcome tile grids stay single-column. */
   .welcome-tile-row { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 700px) {
+  /* Tighter spacing on small phones. */
+  #main { padding: var(--s-2) var(--s-3) var(--s-5); }
+  .welcome-title { font-size: 22px; }
 }
 
 /* ── Motion preferences ───────────────────────────────────────────────── */
