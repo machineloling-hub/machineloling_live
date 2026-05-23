@@ -4,11 +4,6 @@ import { apiFetch, loadChampionsFor, topNChampions } from "./api.js";
 import { makeMultiSelect, makeSingleSelect } from "./widgets/multiselect.js";
 import { refreshCoverage, renderRoleSubTabs } from "./views/coverage.js";
 import { refreshBlindability } from "./views/blind.js";
-import { refreshComparer, _cmpRenderTables } from "./views/comparer.js";
-import { refreshBans } from "./views/bans.js";
-import {
-  refreshBuilder, refreshComboCount, buildPools, renderBuilderResults,
-} from "./views/builder.js";
 import { refreshReplacements } from "./views/replacements.js";
 import { refreshMeta } from "./views/meta.js";
 
@@ -27,12 +22,9 @@ const VIEW_LABELS = {
   welcome:      "Welcome",
   matchup:      "Matchup Coverage",
   synergy:      "Synergy Coverage",
-  bans:         "Ban Recommender",
   replacements: "Expand Your Pool",
-  builder:      "Pool Builder",
   blindability: "Blindability",
-  comparer:     "Individual Champ Compare",
-  meta:         "Playrate by Rank",
+  meta:         "Meta summary",
 };
 
 
@@ -265,10 +257,7 @@ async function _refreshImpl() {
   try {
     if (state.view === "matchup" || state.view === "synergy") await refreshCoverage();
     else if (state.view === "blindability") await refreshBlindability();
-    else if (state.view === "bans") await refreshBans();
-    else if (state.view === "builder") await refreshBuilder();
     else if (state.view === "replacements") await refreshReplacements();
-    else if (state.view === "comparer") await refreshComparer();
     else if (state.view === "meta") refreshMeta();
   } catch (e) {
     console.error(e);
@@ -344,8 +333,6 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   $("#role").addEventListener("change", async (e) => {
     state.role = e.target.value;
     state.replView = null;          // reset → mirror matchup of new role
-    state.pbView = null;            // same for Pool Builder preview
-    state.pbDefinite = []; state.pbMaybe = []; state.pbBuiltRows = null; state.pbSelectedId = null;
     await loadChampionsFor(state.role);
     // Restore this role's cached pool if we have one; otherwise default to
     // the role's top-6 most-played. Drop any cached entries no longer present
@@ -353,7 +340,7 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
     const allowed = new Set((state.champsByRole[state.role] || []).map((c) => c.champion));
     const cached = (_poolsByRole[state.role] || []).filter((c) => allowed.has(c));
     state.pool = cached.length ? cached : topNChampions(state.role, 6);
-    poolMS.renderChips(); pbDefMS.renderChips(); pbMayMS.renderChips();
+    poolMS.renderChips();
     state.otherRole = defaultOtherRole(state.role, state.view);
     renderRoleSubTabs();
     renderRoleStrip();
@@ -414,22 +401,7 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
 
   // Comparer in-tab controls — sort + show-deltas re-render the cached
   // payload (no refetch); champion change refetches.
-  window.cmpSS = makeSingleSelect({
-    chipId: "#cmp-champ-chip",
-    searchId: "#cmp-champ-search",
-    suggestionsId: "#cmp-champ-suggestions",
-    getList: () => state.champsByRole[state.role] || [],
-    getSelected: () => state.cmpChampion,
-    setSelected: (v) => { state.cmpChampion = v; },
-  });
-  $("#cmp-sort").addEventListener("change", (e) => {
-    state.cmpSort = e.target.value;
-    if (state.cmpLastPayload) _cmpRenderTables(state.cmpLastPayload);
-  });
-  $("#cmp-deltas").addEventListener("change", (e) => {
-    state.cmpDeltas = e.target.checked;
-    if (state.cmpLastPayload) _cmpRenderTables(state.cmpLastPayload);
-  });
+  // (Comparer tab removed.)
 
 
   // Pool multi-select (sidebar)
@@ -445,36 +417,7 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
     if (e.target.id !== "pool-search") $("#pool-search").focus();
   });
 
-  // Pool builder definite + maybe
-  window.pbDefMS = makeMultiSelect({
-    chipsId: "#pb-definite-chips", searchId: "#pb-definite-search", suggestionsId: "#pb-definite-suggestions",
-    getList: () => state.champsByRole[state.role] || [],
-    getSelected: () => state.pbDefinite,
-    setSelected: (v) => { state.pbDefinite = v; refreshComboCount(); },
-    max: 8,
-  });
-  window.pbMayMS = makeMultiSelect({
-    chipsId: "#pb-maybe-chips", searchId: "#pb-maybe-search", suggestionsId: "#pb-maybe-suggestions",
-    getList: () => (state.champsByRole[state.role] || []).filter((c) => !state.pbDefinite.includes(c.champion)),
-    getSelected: () => state.pbMaybe,
-    setSelected: (v) => { state.pbMaybe = v; refreshComboCount(); },
-    max: 40,
-  });
-
-  $("#pb-target").addEventListener("input", (e) => {
-    state.pbTarget = parseInt(e.target.value);
-    $("#pb-target-val").textContent = state.pbTarget;
-    refreshComboCount();
-  });
-  $("#pb-build").addEventListener("click", () => buildPools());
-
-  // Replacement mode is no longer user-selectable — always "add".
-
-  // View selectors (Pool Builder + Replacement Finder)
-  $("#pb-view").addEventListener("change", (e) => {
-    state.pbView = e.target.value;
-    renderBuilderResults();
-  });
+  // (Pool Builder tab removed — pbDefMS/pbMayMS and pb-* controls dropped.)
 
   // Rank-bracket selector — populated from /api/meta. The "patches" field
   // now carries rank labels (silver | gold | ... | master_plus); kept under
