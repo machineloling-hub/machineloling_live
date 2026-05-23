@@ -1106,7 +1106,7 @@ button { font-family: inherit; }
 .cov-section-sub { font-size: var(--fs-sm); color: var(--text-dim); font-weight: 400; }
 .cov-problem-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
   gap: 8px;
 }
 .cov-problem-row {
@@ -1218,7 +1218,7 @@ button { font-family: inherit; }
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  grid-template-columns: repeat(2, minmax(min(240px, 100%), 1fr));
   gap: var(--s-2) var(--s-4);
 }
 .weights-collapsible .weights-box label {
@@ -1232,7 +1232,7 @@ button { font-family: inherit; }
 /* Top-3 picks cards */
 .repl-top-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: var(--s-2);
   margin: 0 0 var(--s-4);
 }
@@ -1418,7 +1418,7 @@ button { font-family: inherit; }
 /* ── Ban Recommender ──────────────────────────────────────────────────── */
 #ban-tables-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: var(--s-3);
   margin-top: var(--s-3);
 }
@@ -1628,7 +1628,9 @@ button { font-family: inherit; }
 
 .welcome-tiles {
   display: grid; gap: var(--s-3);
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  /* min(N, 100%) lets the column shrink below N on viewports narrower than
+     N + container padding, instead of forcing horizontal overflow. */
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
 }
 .welcome-tile {
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-1);
@@ -1836,7 +1838,7 @@ tr.in-pool-row td { background: var(--accent-soft); }
 /* ── Pool strength summary (top of Pool Health tab) ───────────────────── */
 .strength-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  grid-template-columns: repeat(4, minmax(min(220px, 100%), 1fr));
   gap: var(--s-3);
   margin: var(--s-2) 0 var(--s-5);
 }
@@ -1936,6 +1938,14 @@ tr.in-pool-row td { background: var(--accent-soft); }
   .tabs-top { width: 100%; overflow-x: auto; }
   .topbar-brand .brand-name .brand-sub { display: none; }
   .welcome-title { font-size: 26px; }
+  /* Topbar fits in 56px height with no wrap. On narrow viewports the brand,
+     divider, view-crumb and full author-link row don't fit — progressively
+     hide non-essentials so the hamburger + brand remain. */
+  .topbar-divider { display: none; }
+  #topbar-title { display: none; }
+  .topbar-links { font-size: var(--fs-xs); gap: var(--s-2); }
+  .topbar-links a { padding: 4px 6px; }
+  .topbar-links .sep { display: none; }
   /* Sidebar form controls were sized for a fixed 280px column; on the
      mobile overlay they're fine, but shrink min-widths so nothing forces
      horizontal overflow if any of them escape into #main. */
@@ -1952,6 +1962,14 @@ tr.in-pool-row td { background: var(--accent-soft); }
   /* Tighter spacing on small phones. */
   #main { padding: var(--s-2) var(--s-3) var(--s-5); }
   .welcome-title { font-size: 22px; }
+  /* Below 700px we drop the author-links from the topbar entirely — they
+     are duplicated inside the welcome page "chip" links so nothing is lost. */
+  .topbar-links { display: none; }
+  /* And shrink the brand to just its mark; full "Pool Designer" wordmark
+     is still discoverable via the hamburger/sidebar. */
+  .topbar-brand .brand-name { display: none; }
+  /* Tabs row: smaller padding so 2 tab buttons fit per row at 375px. */
+  .tabs-top button, .tabs-top .pill { padding: 6px 10px; font-size: var(--fs-sm); }
 }
 
 /* ── Motion preferences ───────────────────────────────────────────────── */
