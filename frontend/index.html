@@ -9,11 +9,35 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=63">
+<link rel="stylesheet" href="style.css?v=64">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
 <div id="app" class="app-shell" data-sidebar="expanded">
+  <script>
+    // Pre-paint: pick the correct sidebar state before the browser renders
+    // the welcome content. This runs synchronously after <div id="app">
+    // opens, so the attribute is set before first paint — no flash of an
+    // overlay sidebar on phones while the main ES module loads.
+    (function () {
+      try {
+        var el = document.currentScript && document.currentScript.parentElement;
+        if (!el) el = document.getElementById("app");
+        if (!el) return;
+        var saved = null;
+        try { saved = localStorage.getItem("sidebar"); } catch (_) {}
+        var mm = window.matchMedia;
+        var narrow = mm && (
+          mm("(max-width: 1100px)").matches ||
+          mm("(pointer: coarse) and (max-width: 1200px)").matches
+        );
+        var state = narrow
+          ? "collapsed"
+          : (saved === "collapsed" ? "collapsed" : "expanded");
+        el.setAttribute("data-sidebar", state);
+      } catch (_) { /* never let this block paint */ }
+    })();
+  </script>
   <header id="topbar">
     <button id="sidebar-toggle" class="icon-btn" aria-label="Toggle sidebar" title="Toggle sidebar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -242,7 +266,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=63"></script>
+<script type="module" src="src/main.js?v=64"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>
