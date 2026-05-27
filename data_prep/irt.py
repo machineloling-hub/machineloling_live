@@ -141,8 +141,7 @@ def fit_theta(cfg: RefreshConfig, feather_paths: list[Path]) -> pd.DataFrame:
         shape=(n_rows, n_feat))
 
     clf = LogisticRegression(
-        penalty="l2", C=_C, fit_intercept=False, solver="lbfgs",
-        max_iter=200)
+        C=_C, fit_intercept=False, solver="lbfgs", max_iter=200)
     clf.fit(X, y_arr)
     theta = clf.coef_.ravel().astype(np.float32)
     # Wald SEs from the regularised information matrix diagonal.

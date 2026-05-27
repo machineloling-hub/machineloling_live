@@ -253,13 +253,17 @@ def _finalize(
     def _loo_wr(ch: str, role: str, ex_g: int, ex_w: int) -> tuple[float, int]:
         """Leave-opponent-out WR for (ch, role): subtract the cell's games
         and wins from the champ-role totals. Returns (wr, remaining_games).
-        Falls back to 0.5 / 0 when nothing's left after exclusion (cell
-        dominates the champ's playtime)."""
+
+        ind_counts only tallies participants whose own bucket == cfg.tier,
+        but matchup/synergy counters tally every pair in any in-tier match,
+        so the cell can legitimately have more games than ind for that
+        champion. Clamp to a safe fallback when the subtraction would go
+        negative or trivially exhaust the LOO support."""
         g_tot = ind_g_lookup.get((ch, role), 0)
         w_tot = ind_w_lookup.get((ch, role), 0)
         g_rem = g_tot - ex_g
         w_rem = w_tot - ex_w
-        if g_rem <= 0:
+        if g_rem <= 0 or w_rem < 0 or w_rem > g_rem:
             return 0.5, 0
         return w_rem / g_rem, g_rem
 
