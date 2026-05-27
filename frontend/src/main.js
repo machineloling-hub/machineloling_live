@@ -50,9 +50,11 @@ function renderRoleStrip() {
 }
 
 // Rank crest icon (Community Dragon static asset). master_plus → master crest.
+// Uses .svg because the emerald .png is missing upstream; .svg is the
+// authoritative source and renders identically for every other tier.
 const RANK_CREST_URL = (rank) => {
   const tier = rank === "master_plus" ? "master" : rank;
-  return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier}.png`;
+  return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier}.svg`;
 };
 
 // --- Slider value bubbles: position the value pill above the thumb ---
