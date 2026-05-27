@@ -208,6 +208,28 @@ def main() -> None:
         breakdown = ", ".join(f"{r}: {n}" for r, n in sorted(per_role.items()))
         print(f"[pack_champions] interpolated {len(interpolations)} scrape gaps ({breakdown})")
 
+    # Prune ranks where every role's slice has zero games — those parquets
+    # carry the champion roster but no actual match data (the puller seeds
+    # from high-tier players, so low brackets see ~no games). Keeping them
+    # would force the frontend to fall back to the cross-tier `default`
+    # distribution, making the meta-summary ribbons identical across those
+    # ranks. Dropping them is cleaner than showing duplicate data.
+    empty_ranks = []
+    for rank in list(out["by_patch"].keys()):
+        per_role = out["by_patch"][rank]
+        total_games = sum(
+            sum(int(r.get("games", 0)) for r in (per_role.get(role) or []))
+            for role in ROLES
+        )
+        if total_games == 0:
+            empty_ranks.append(rank)
+            del out["by_patch"][rank]
+    if empty_ranks:
+        out["patches"] = [p for p in out["patches"] if p not in empty_ranks]
+        if out.get("latest_patch") in empty_ranks:
+            out["latest_patch"] = out["patches"][-1] if out["patches"] else None
+        print(f"[pack_champions] pruned empty ranks: {', '.join(empty_ranks)}")
+
     out_path = DIST_DIR / "champions.json"
     with out_path.open("w") as f:
         json.dump(out, f, separators=(",", ":"))
