@@ -297,6 +297,61 @@ def _manifest_key(cfg: RefreshConfig) -> str:
     return f"{cfg.s3_prefix_out}{MANIFEST_KEY_SUFFIX}"
 
 
+# ─────────────────────────────────────────────────────────────────────
+# Cross-tier PR parquet share
+# ─────────────────────────────────────────────────────────────────────
+# Per-tier refresh jobs run on ephemeral runners (GH Actions matrix). Each
+# only writes its own pr_table_{tier}.parquet, so without cross-tier sync
+# the resulting champions.json lists only one rank in `patches`. We mirror
+# each tier's staged parquet to a shared prefix and pull every sibling's
+# down before packing, so champions.json always enumerates all tiers that
+# have ever been refreshed.
+
+def _shared_pr_prefix(cfg: RefreshConfig) -> str:
+    return f"{cfg.s3_prefix_out}_shared_pr/"
+
+
+def upload_shared_pr(cfg: RefreshConfig, src: Path) -> str | None:
+    """Upload this tier's staged pr_table_{tier}.parquet to the shared prefix.
+    Returns the s3:// URI, or None if no bucket / file missing."""
+    if not cfg.s3_bucket or not src.exists():
+        return None
+    s3 = _client(cfg)
+    key = f"{_shared_pr_prefix(cfg)}pr_table_{cfg.tier}.parquet"
+    s3.upload_file(str(src), cfg.s3_bucket, key, ExtraArgs={
+        "ContentType": "application/octet-stream",
+        "CacheControl": "no-cache",
+    })
+    return f"s3://{cfg.s3_bucket}/{key}"
+
+
+def download_shared_pr(cfg: RefreshConfig, dest_dir: Path) -> list[Path]:
+    """Pull every other tier's pr_table_{tier}.parquet from the shared
+    prefix into `dest_dir`. Skips files already present locally with
+    non-zero size (the current tier's file is written by the local
+    collect step and shouldn't be clobbered)."""
+    if not cfg.s3_bucket:
+        return []
+    s3 = _client(cfg)
+    prefix = _shared_pr_prefix(cfg)
+    out: list[Path] = []
+    paginator = s3.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=cfg.s3_bucket, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            key = obj["Key"]
+            name = key[len(prefix):]
+            if not name.startswith("pr_table_") or not name.endswith(".parquet"):
+                continue
+            dest = dest_dir / name
+            if dest.exists() and dest.stat().st_size > 0:
+                out.append(dest)
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            s3.download_file(cfg.s3_bucket, key, str(dest))
+            out.append(dest)
+    return out
+
+
 def update_manifest(cfg: RefreshConfig, refresh_kind: str = "full") -> dict:
     """Read-modify-write the top-level manifest with this tier's new version.
     Last step of a refresh — readers tolerate stale, never broken.

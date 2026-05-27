@@ -204,6 +204,21 @@ def _stage_collect(cfg: RefreshConfig) -> Path:
     pr = src / "pr_table.parquet"
     if pr.exists():
         shutil.copy2(pr, STAGING_DIR / f"pr_table_{cfg.tier}.parquet")
+    # Per-tier matrix jobs run on ephemeral runners, so each starts with
+    # an empty STAGING_DIR. Without cross-tier sync the resulting
+    # champions.json lists only this tier's rank in `patches`. Mirror our
+    # PR parquet to a shared S3 prefix, then pull every sibling's down so
+    # pack_champions.py sees all known tiers.
+    own_pr = STAGING_DIR / f"pr_table_{cfg.tier}.parquet"
+    if own_pr.exists():
+        uri = s3_io.upload_shared_pr(cfg, own_pr)
+        if uri:
+            print(f"[collect] shared PR up: {uri}")
+    siblings = s3_io.download_shared_pr(cfg, STAGING_DIR)
+    sib_names = sorted(p.name for p in siblings if p.name != own_pr.name)
+    if sib_names:
+        print(f"[collect] shared PR down: {len(sib_names)} sibling(s) "
+              f"({', '.join(n.removeprefix('pr_table_').removesuffix('.parquet') for n in sib_names)})")
     # Stamp a small metadata file the packers consume so the frontend can
     # show the real patch version (and region list) without anyone having
     # to hand-edit HTML each cycle. Written every collect so it always
