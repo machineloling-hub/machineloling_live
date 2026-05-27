@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=67">
+<link rel="stylesheet" href="style.css?v=68">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -101,8 +101,7 @@
 
     <div class="field">
       <span class="field-label">Rank bracket</span>
-      <div id="rank-list" class="rank-list" role="radiogroup" aria-label="Rank bracket"></div>
-      <select id="patch" class="visually-hidden" tabindex="-1" aria-hidden="true"></select>
+      <select id="patch" class="rank-select" aria-label="Rank bracket"></select>
       <span class="hint" style="margin-left:0;"><span id="sidebar-patch-label">Patch …</span> <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="This bracket's pick rates drive PR-weighted scoring and the PR floor. Matchup and synergy Δ values come from a cross-patch D+ dataset (16.1–16.4), so they don't change when you switch brackets — only playrates do.">?</span></span>
     </div>
 
@@ -266,7 +265,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=67"></script>
+<script type="module" src="src/main.js?v=68"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>

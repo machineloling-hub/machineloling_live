@@ -144,37 +144,25 @@ function _initSliderBubbles() {
 }
 
 function renderRankList() {
-  const list = $("#rank-list");
-  if (!list) return;
+  const sel = $("#patch");
+  if (!sel) return;
   if (!state.patches || !state.patches.length) {
-    list.innerHTML = `<div class="rank-row" disabled><span class="rank-name">No rank data available</span></div>`;
+    sel.innerHTML = `<option value="">No rank data available</option>`;
+    sel.disabled = true;
     return;
   }
-  // Match the mockup's order: highest tier on top.
+  sel.disabled = false;
+  // Highest tier on top — matches the previous radio-list ordering.
   const ORDER = ["master_plus", "diamond", "emerald", "platinum", "gold", "silver"];
   const sorted = [...state.patches].sort(
     (a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)
   );
-  list.innerHTML = sorted.map((p) => {
+  sel.innerHTML = sorted.map((p) => {
     const label = RANK_LABELS[p] || p;
-    const color = RANK_COLORS[p] || "#d4d4d4";
-    return `
-      <button type="button" class="rank-row${p === state.patch ? " active" : ""}"
-              role="radio" aria-checked="${p === state.patch}"
-              data-patch="${esc(p)}">
-        <img src="${esc(RANK_CREST_URL(p))}" alt="">
-        <span class="rank-name" style="color:${color};">${esc(label)}</span>
-      </button>`;
+    return `<option value="${esc(p)}"${p === state.patch ? " selected" : ""}>${esc(label)}</option>`;
   }).join("");
-  list.querySelectorAll(".rank-row[data-patch]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const v = btn.dataset.patch;
-      if (v === state.patch) return;
-      const sel = $("#patch");
-      sel.value = v;
-      sel.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-  });
+  // The change handler that drives state.patch is already wired against
+  // #patch elsewhere, so no per-render listener bookkeeping is needed.
 }
 
 
