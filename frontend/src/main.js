@@ -145,24 +145,94 @@ function _initSliderBubbles() {
 
 function renderRankList() {
   const sel = $("#patch");
-  if (!sel) return;
+  const trigger = $("#rank-trigger");
+  const menu = $("#rank-menu");
+  const wrap = $("#rank-dropdown");
+  if (!sel || !trigger || !menu || !wrap) return;
+
   if (!state.patches || !state.patches.length) {
-    sel.innerHTML = `<option value="">No rank data available</option>`;
-    sel.disabled = true;
+    trigger.disabled = true;
+    trigger.querySelector(".rank-trigger-label").textContent = "No rank data available";
+    trigger.querySelector(".rank-trigger-icon").src = "";
+    menu.innerHTML = "";
     return;
   }
-  sel.disabled = false;
-  // Highest tier on top — matches the previous radio-list ordering.
+  trigger.disabled = false;
+
+  // Highest tier on top — preserves the previous radio-list order.
   const ORDER = ["master_plus", "diamond", "emerald", "platinum", "gold", "silver"];
   const sorted = [...state.patches].sort(
     (a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)
   );
-  sel.innerHTML = sorted.map((p) => {
+
+  // Sync the hidden <select> options so listeners reading sel.value stay in sync.
+  sel.innerHTML = sorted.map((p) =>
+    `<option value="${esc(p)}"${p === state.patch ? " selected" : ""}>${esc(RANK_LABELS[p] || p)}</option>`
+  ).join("");
+
+  // Trigger reflects the currently selected rank.
+  const cur = state.patch;
+  const curLabel = RANK_LABELS[cur] || cur || "—";
+  const curColor = RANK_COLORS[cur] || "var(--text)";
+  trigger.querySelector(".rank-trigger-icon").src = cur ? RANK_CREST_URL(cur) : "";
+  const labelEl = trigger.querySelector(".rank-trigger-label");
+  labelEl.textContent = curLabel;
+  labelEl.style.color = curColor;
+
+  // Menu rows reuse the existing .rank-row styling.
+  menu.innerHTML = sorted.map((p) => {
     const label = RANK_LABELS[p] || p;
-    return `<option value="${esc(p)}"${p === state.patch ? " selected" : ""}>${esc(label)}</option>`;
+    const color = RANK_COLORS[p] || "#d4d4d4";
+    return `
+      <button type="button" class="rank-row${p === cur ? " active" : ""}"
+              role="option" aria-selected="${p === cur}"
+              data-patch="${esc(p)}">
+        <img src="${esc(RANK_CREST_URL(p))}" alt="">
+        <span class="rank-name" style="color:${color};">${esc(label)}</span>
+      </button>`;
   }).join("");
-  // The change handler that drives state.patch is already wired against
-  // #patch elsewhere, so no per-render listener bookkeeping is needed.
+}
+
+// One-time wiring for the rank dropdown (open/close + selection). The
+// trigger and menu elements are static in index.html; only their inner
+// markup re-renders via renderRankList, so the document-level click
+// handler keeps working across re-renders.
+function _initRankDropdown() {
+  const wrap = $("#rank-dropdown");
+  const trigger = $("#rank-trigger");
+  const menu = $("#rank-menu");
+  if (!wrap || !trigger || !menu) return;
+  const close = () => {
+    wrap.classList.remove("open");
+    trigger.setAttribute("aria-expanded", "false");
+    menu.hidden = true;
+  };
+  const open = () => {
+    wrap.classList.add("open");
+    trigger.setAttribute("aria-expanded", "true");
+    menu.hidden = false;
+  };
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (menu.hidden) open(); else close();
+  });
+  // Delegated click: any .rank-row inside the menu sets the patch.
+  menu.addEventListener("click", (e) => {
+    const btn = e.target.closest(".rank-row[data-patch]");
+    if (!btn) return;
+    const v = btn.dataset.patch;
+    close();
+    if (v === state.patch) return;
+    const sel = $("#patch");
+    sel.value = v;
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  document.addEventListener("click", (e) => {
+    if (!wrap.contains(e.target)) close();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !menu.hidden) { close(); trigger.focus(); }
+  });
 }
 
 
@@ -320,6 +390,7 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
 
   _initSliderBubbles();
   _initInfoTips();
+  _initRankDropdown();
 
   // Sync sidebar DOM controls with restored state so the UI matches the
   // cached values immediately on load.
