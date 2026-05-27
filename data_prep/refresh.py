@@ -31,7 +31,9 @@ Skip a stage with the --skip flag when iterating:
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -51,6 +53,18 @@ from shrinkage import (add_eb_columns, add_hier_columns,  # noqa: E402
 import s3_io  # noqa: E402
 
 STAGING_DIR = ROOT / "dist" / "staged"
+
+
+def _max_patch_from_range(patch_range: str) -> str | None:
+    """'16.1-16.10' → '16.10'. '16.9' → '16.9'. Handles open ranges too.
+    Picks the lexically-greatest dotted token by numeric component order."""
+    tokens = re.findall(r"\d+\.\d+", patch_range or "")
+    if not tokens:
+        return None
+    def _key(t: str) -> tuple[int, int]:
+        a, b = t.split(".", 1)
+        return (int(a), int(b))
+    return max(tokens, key=_key)
 
 
 def _stage_pull(cfg: RefreshConfig) -> list[Path]:
@@ -190,7 +204,19 @@ def _stage_collect(cfg: RefreshConfig) -> Path:
     pr = src / "pr_table.parquet"
     if pr.exists():
         shutil.copy2(pr, STAGING_DIR / f"pr_table_{cfg.tier}.parquet")
-    print(f"[collect] staged into {STAGING_DIR}")
+    # Stamp a small metadata file the packers consume so the frontend can
+    # show the real patch version (and region list) without anyone having
+    # to hand-edit HTML each cycle. Written every collect so it always
+    # reflects the most recent refresh's config.
+    meta = {
+        "data_patch": _max_patch_from_range(cfg.patch_range),
+        "patch_range": cfg.patch_range,
+        "regions": cfg.regions,
+        "queue": cfg.queue,
+        "refreshed_at": cfg.version,
+    }
+    (STAGING_DIR / "data_meta.json").write_text(json.dumps(meta, indent=2))
+    print(f"[collect] staged into {STAGING_DIR} (patch={meta['data_patch']})")
     return STAGING_DIR
 
 

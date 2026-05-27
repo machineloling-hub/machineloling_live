@@ -411,6 +411,11 @@ async function apiFetch(input, init) {
       pool_builder_cap: 10000,
       patches: _championsData.patches,
       latest_patch: _championsData.latest_patch,
+      // Actual game-patch version of the source data (e.g. "16.10"). Used
+      // by main.js to populate the otherwise-hardcoded "Patch X" UI spans.
+      data_patch: _championsData.data_patch,
+      data_regions: _championsData.data_regions,
+      refreshed_at: _championsData.refreshed_at,
     };
   } else if (path.startsWith('/api/champions/')) {
     const role = path.slice('/api/champions/'.length);

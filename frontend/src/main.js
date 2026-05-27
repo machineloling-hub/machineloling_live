@@ -461,6 +461,17 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   // tournament-feel pick rates out of the box.
   const meta = await (await apiFetch("/api/meta")).json();
   state.patches = meta.patches || [];
+  // Populate the three "current data patch" UI labels from the packed
+  // data_meta.json (stamped by data_prep/refresh.py from REFRESH_PATCH_RANGE).
+  // Falls back to a neutral placeholder if the field is missing so the UI
+  // never shows a stale hard-coded patch number.
+  const _patchLabel = meta.data_patch ? `Patch ${meta.data_patch}` : "Patch —";
+  const _brandSub = document.getElementById("brand-sub-patch");
+  if (_brandSub) _brandSub.textContent = _patchLabel;
+  const _sidePatch = document.getElementById("sidebar-patch-label");
+  if (_sidePatch) _sidePatch.textContent = _patchLabel;
+  const _metaPatch = document.getElementById("meta-view-patch-label");
+  if (_metaPatch) _metaPatch.textContent = meta.data_patch ? `patch ${meta.data_patch}` : "patch —";
   // Honour the cached patch if it's still in the available bracket list;
   // otherwise fall back to the server's latest default.
   const _cachedPatch = state.patch;

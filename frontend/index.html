@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=65">
+<link rel="stylesheet" href="style.css?v=66">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -50,7 +50,7 @@
       <span class="brand-mark" aria-hidden="true">P</span>
       <span class="brand-name">
         Pool Designer
-        <span class="brand-sub">Patch 16.9</span>
+        <span class="brand-sub" id="brand-sub-patch">Patch …</span>
       </span>
     </div>
     <div class="topbar-divider" aria-hidden="true"></div>
@@ -103,7 +103,7 @@
       <span class="field-label">Rank bracket</span>
       <div id="rank-list" class="rank-list" role="radiogroup" aria-label="Rank bracket"></div>
       <select id="patch" class="visually-hidden" tabindex="-1" aria-hidden="true"></select>
-      <span class="hint" style="margin-left:0;">Patch 16.9 <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="This bracket's pick rates drive PR-weighted scoring and the PR floor. Matchup and synergy Δ values come from a cross-patch D+ dataset (16.1–16.4), so they don't change when you switch brackets — only playrates do.">?</span></span>
+      <span class="hint" style="margin-left:0;"><span id="sidebar-patch-label">Patch …</span> <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="This bracket's pick rates drive PR-weighted scoring and the PR floor. Matchup and synergy Δ values come from a cross-patch D+ dataset (16.1–16.4), so they don't change when you switch brackets — only playrates do.">?</span></span>
     </div>
 
     <label class="checkbox-label">
@@ -252,7 +252,7 @@
 
     <!-- Meta summary -->
     <section id="view-meta" class="view">
-      <h2 style="color:var(--text);margin-bottom:6px;">Meta summary — patch 16.9 <span class="info-tip" tabindex="0" role="button" aria-label="More info" data-tip="Stacked bars show each champion's share of role games, Silver → Master+. Bars sum to 100% per bracket. Ribbons connect the same champion across adjacent brackets so you can trace popularity shifts.">?</span></h2>
+      <h2 style="color:var(--text);margin-bottom:6px;">Meta summary — <span id="meta-view-patch-label">patch …</span> <span class="info-tip" tabindex="0" role="button" aria-label="More info" data-tip="Stacked bars show each champion's share of role games, Silver → Master+. Bars sum to 100% per bracket. Ribbons connect the same champion across adjacent brackets so you can trace popularity shifts.">?</span></h2>
       <div id="meta-charts"></div>
     </section>
   </main>
@@ -266,7 +266,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=65"></script>
+<script type="module" src="src/main.js?v=66"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>

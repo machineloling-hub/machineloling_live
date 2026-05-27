@@ -28,6 +28,23 @@ DIST_DIR = Path(os.environ.get("POOL_DESIGNER_DIST_DIR",
 INTERP_NEIGHBOR_MIN = 0.001  # 0.1% — at least one neighbor must clear this
 
 
+def _load_data_meta() -> dict:
+    """Stamped by refresh.py during the collect stage (and overridable per
+    invocation by POOL_DESIGNER_DATA_PATCH). Returns {} if neither exists
+    so legacy local runs without a refresh keep working."""
+    meta: dict = {}
+    meta_path = DATA_DIR / "data_meta.json"
+    if meta_path.exists():
+        try:
+            meta = json.loads(meta_path.read_text())
+        except Exception as e:
+            print(f"[pack_champions] warning: data_meta.json unreadable ({e})")
+    env_patch = os.environ.get("POOL_DESIGNER_DATA_PATCH")
+    if env_patch:
+        meta["data_patch"] = env_patch
+    return meta
+
+
 def _interpolate_scrape_gaps(out: dict) -> list[dict]:
     """Mutate out['by_patch'] in place to fill missing (rank, role, champ)
     rows with neighbor-averaged pick rates. Returns a flat log of fills."""
@@ -102,10 +119,18 @@ def _interpolate_scrape_gaps(out: dict) -> list[dict]:
 def main() -> None:
     DIST_DIR.mkdir(exist_ok=True)
     store = load_all(DATA_DIR)
+    data_meta = _load_data_meta()
 
     out: dict = {
         "patches":      store.patches,
         "latest_patch": store.latest_patch,
+        # Actual game-patch version of the source data (e.g. "16.10"). The
+        # legacy `latest_patch` field is overloaded: after the rank refactor
+        # it carries the default rank label ("diamond"), not a patch number.
+        # Frontend reads `data_patch` for UI strings.
+        "data_patch":   data_meta.get("data_patch"),
+        "data_regions": data_meta.get("regions"),
+        "refreshed_at": data_meta.get("refreshed_at"),
         "by_patch":     {},
         "default":      {},   # PR from individual_wr.csv (cross-patch overall)
     }
@@ -133,7 +158,12 @@ def main() -> None:
             data_dir = get_data_dir_from_env()
             pq = data_dir / f"pr_table_{patch}.parquet"
             if not pq.exists():
-                pq = backend_dir / f"lolalytics_s16_{patch}_16.9.parquet"
+                # Legacy manual-scrape filename: lolalytics_s16_{rank}_{patch}.parquet.
+                # Glob for any patch suffix so cycling forward doesn't require
+                # a code edit.
+                cands = sorted(backend_dir.glob(f"lolalytics_s16_{patch}_*.parquet"))
+                if cands:
+                    pq = cands[-1]
             if pq.exists():
                 _df = _pd.read_parquet(pq)
                 _df = _df[_df["lane"].isin(LOL_LANE_TO_ROLE.keys())]

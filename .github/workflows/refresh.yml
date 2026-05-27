@@ -57,7 +57,7 @@ jobs:
       REFRESH_TIER: ${{ matrix.tier }}
       REFRESH_QUEUE: ranked_solo
       REFRESH_PATCH_RANGE: "16.1-16.10"
-      REFRESH_REGIONS: "NA1,KR,EUW1"
+      REFRESH_REGIONS: "NA1,KR,EUW1,VN2"
       PYTHONIOENCODING: "utf-8"
     steps:
       - uses: actions/checkout@v4

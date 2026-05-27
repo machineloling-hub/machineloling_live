@@ -400,13 +400,17 @@ def _load_patch_pr_table() -> tuple[Dict[str, Dict[str, Dict[str, float]]], list
     backend_dir = Path(__file__).resolve().parent
     ranks = ["silver", "gold", "platinum", "emerald", "diamond", "master_plus"]
     default_rank = "diamond"
-    patch_for_filename = "16.9"
 
     pr_by_rank: Dict[str, Dict[str, Dict[str, float]]] = {}
     for rank in ranks:
         path = data_dir / f"pr_table_{rank}.parquet"
         if not path.exists():
-            path = backend_dir / f"lolalytics_s16_{rank}_{patch_for_filename}.parquet"
+            # Legacy manual-scrape filename: lolalytics_s16_{rank}_{patch}.parquet.
+            # Glob for any patch suffix so the loader auto-picks the newest
+            # without anyone editing a hardcoded version each cycle.
+            cands = sorted(backend_dir.glob(f"lolalytics_s16_{rank}_*.parquet"))
+            if cands:
+                path = cands[-1]
         if not path.exists():
             print(f"[data] missing PR parquet for rank={rank}")
             continue
