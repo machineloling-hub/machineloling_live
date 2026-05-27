@@ -89,7 +89,8 @@ LOL_LANE_TO_ROLE = {
     "jungle":   "JUNGLE",
     "middle":   "MID",
     "bottom":   "ADC",
-    "support":  "SUP",
+    "support":  "SUP",  # lolalytics legacy scrape
+    "utility":  "SUP",  # refreshed pipeline (inverse of RIOT_LANE_TO_ROLE)
 }
 
 
