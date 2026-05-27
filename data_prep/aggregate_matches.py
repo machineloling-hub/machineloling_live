@@ -104,13 +104,26 @@ def _participant_tier_bucket(part: dict) -> str | None:
 _CROSS_ROLE_PAIRS = [(a, b) for a in ROLES for b in ROLES if a != b]
 
 
-def _new_counters() -> tuple[dict, dict, dict, dict]:
-    """Fresh empty counter dicts in the canonical layout."""
+def _new_counters() -> tuple[dict, dict, dict, dict, dict]:
+    """Fresh empty counter dicts in the canonical layout.
+
+    Five counters:
+      matchup, synergy           — pairwise per cfg.tier match
+      individual                 — per-(champ,role), filtered to participants
+                                   whose own bucket == cfg.tier (drives the
+                                   individual_wr.csv output)
+      pr                         — pick-rate counts, also per-tier filtered
+      individual_full            — per-(champ,role) over EVERY participant in
+                                   any in-tier match. Matches the semantics of
+                                   matchup/synergy counts and is what LOO
+                                   subtraction reads in _finalize.
+    """
     return (
         defaultdict(lambda: defaultdict(lambda: [0, 0])),  # matchup
         defaultdict(lambda: defaultdict(lambda: [0, 0])),  # synergy
-        defaultdict(lambda: [0, 0]),                       # individual
+        defaultdict(lambda: [0, 0]),                       # individual (tier)
         defaultdict(int),                                  # pr
+        defaultdict(lambda: [0, 0]),                       # individual_full
     )
 
 
@@ -121,6 +134,7 @@ def _count_feather_rows(
     synergy_counts: dict,
     ind_counts: dict,
     pr_counts: dict,
+    ind_full_counts: dict,
 ) -> tuple[int, int, int]:
     """Walk one feather's rows and update the supplied counter dicts in
     place. Returns (n_matches, n_in_tier, n_dup_role_skipped)."""
@@ -160,15 +174,19 @@ def _count_feather_rows(
             continue
         # Individual WR + PR contributions: only count participants
         # that are actually in cfg.tier (per-participant bucketing).
+        # individual_full mirrors matchup/synergy: every in-tier-match
+        # participant counts, so LOO subtraction is consistent.
         for role, plist in by_role.items():
             lane_l = _ROLE_TO_LANE_LOWER[role]
             for p in plist:
-                if _participant_tier_bucket(p) != tier:
-                    continue
                 champ = _norm_champ(p.get("championName") or "")
                 if not champ:
                     continue
                 won = 1 if _team_won(p, winner) else 0
+                ind_full_counts[(champ, role)][0] += 1
+                ind_full_counts[(champ, role)][1] += won
+                if _participant_tier_bucket(p) != tier:
+                    continue
                 ind_counts[(champ, role)][0] += 1
                 ind_counts[(champ, role)][1] += won
                 pr_counts[(lane_l, champ)] += 1
@@ -228,6 +246,7 @@ def _finalize(
     synergy_counts: dict,
     ind_counts: dict,
     pr_counts: dict,
+    ind_full_counts: dict | None = None,
 ) -> dict[str, pd.DataFrame]:
     """Convert summed counter dicts into the output DataFrame schema
     (matchup_*, synergy_*, individual_wr, pr_table) with min_games_cell
@@ -245,20 +264,21 @@ def _finalize(
         out["individual_wr"] = pd.DataFrame(
             columns=["champion", "role", "games", "wins", "win_rate"])
 
-    # Per-(champion, role) totals; reused below as the LOO baseline source
-    # so we don't have to recompute (games, wins) on every cell.
-    ind_g_lookup = {(ch, role): g for (ch, role), (g, w) in ind_counts.items()}
-    ind_w_lookup = {(ch, role): w for (ch, role), (g, w) in ind_counts.items()}
+    # Per-(champion, role) totals used for the LOO baseline. Prefer the
+    # tier-agnostic ind_full counts so cell subtraction is consistent with
+    # matchup/synergy semantics (those count every pair in any in-tier
+    # match, not just same-tier participants). Fall back to ind_counts on
+    # legacy partials that don't carry the full counter.
+    src = ind_full_counts if ind_full_counts else ind_counts
+    ind_g_lookup = {(ch, role): g for (ch, role), (g, w) in src.items()}
+    ind_w_lookup = {(ch, role): w for (ch, role), (g, w) in src.items()}
 
     def _loo_wr(ch: str, role: str, ex_g: int, ex_w: int) -> tuple[float, int]:
         """Leave-opponent-out WR for (ch, role): subtract the cell's games
         and wins from the champ-role totals. Returns (wr, remaining_games).
 
-        ind_counts only tallies participants whose own bucket == cfg.tier,
-        but matchup/synergy counters tally every pair in any in-tier match,
-        so the cell can legitimately have more games than ind for that
-        champion. Clamp to a safe fallback when the subtraction would go
-        negative or trivially exhaust the LOO support."""
+        Defensive clamp in case of residual count drift (e.g., dropped
+        rows from malformed champion names)."""
         g_tot = ind_g_lookup.get((ch, role), 0)
         w_tot = ind_w_lookup.get((ch, role), 0)
         g_rem = g_tot - ex_g
@@ -383,7 +403,7 @@ def aggregate_tier(cfg: RefreshConfig, feather_paths: list[Path]) -> dict[str, p
         individual_wr             → DataFrame (champion, role, games, wins)
         pr_table                  → DataFrame (champion_name, lane, games)
     """
-    matchup_counts, synergy_counts, ind_counts, pr_counts = _new_counters()
+    matchup_counts, synergy_counts, ind_counts, pr_counts, ind_full_counts = _new_counters()
     n_matches = n_in_tier = n_dup = 0
     for fp in feather_paths:
         try:
@@ -392,13 +412,15 @@ def aggregate_tier(cfg: RefreshConfig, feather_paths: list[Path]) -> dict[str, p
             print(f"  skip {fp.name}: {e}")
             continue
         m, t, d = _count_feather_rows(
-            cfg, df, matchup_counts, synergy_counts, ind_counts, pr_counts)
+            cfg, df, matchup_counts, synergy_counts, ind_counts, pr_counts,
+            ind_full_counts)
         n_matches += m; n_in_tier += t; n_dup += d
 
     print(f"[aggregate] {n_matches} matches scanned, {n_in_tier} contributed to tier={cfg.tier}"
           + (f", {n_dup} skipped (duplicate role on a team)" if n_dup else ""))
 
-    return _finalize(cfg, matchup_counts, synergy_counts, ind_counts, pr_counts)
+    return _finalize(cfg, matchup_counts, synergy_counts, ind_counts,
+                     pr_counts, ind_full_counts)
 
 
 # ────────────────────────────────────────────────────────────────────────
@@ -417,12 +439,13 @@ def aggregate_tier(cfg: RefreshConfig, feather_paths: list[Path]) -> dict[str, p
 #   individual: champion, role, games, wins
 #   pr:       lane, champion, games
 
-_PARTIAL_KINDS = ("matchup", "synergy", "individual", "pr")
+_PARTIAL_KINDS = ("matchup", "synergy", "individual", "pr", "individual_full")
 
 
 def _counters_to_partial_dfs(
     matchup_counts: dict, synergy_counts: dict,
     ind_counts: dict, pr_counts: dict,
+    ind_full_counts: dict,
 ) -> dict[str, pd.DataFrame]:
     matchup_rows = [
         {"role_a": ra, "role_b": rb, "champion": ca, "opponent": cb,
@@ -444,6 +467,10 @@ def _counters_to_partial_dfs(
         {"lane": lane_l, "champion": ch, "games": g}
         for (lane_l, ch), g in pr_counts.items()
     ]
+    ind_full_rows = [
+        {"champion": ch, "role": role, "games": g, "wins": w}
+        for (ch, role), (g, w) in ind_full_counts.items()
+    ]
     return {
         "matchup": pd.DataFrame(matchup_rows,
             columns=["role_a", "role_b", "champion", "opponent", "games", "wins"]),
@@ -452,6 +479,8 @@ def _counters_to_partial_dfs(
         "individual": pd.DataFrame(ind_rows,
             columns=["champion", "role", "games", "wins"]),
         "pr": pd.DataFrame(pr_rows, columns=["lane", "champion", "games"]),
+        "individual_full": pd.DataFrame(ind_full_rows,
+            columns=["champion", "role", "games", "wins"]),
     }
 
 
@@ -464,11 +493,13 @@ def count_one_feather(cfg: RefreshConfig, feather_path: Path) -> dict[str, pd.Da
     """
     df = pd.read_feather(
         feather_path, columns=["match_id", "winner", "participants_data"])
-    matchup_counts, synergy_counts, ind_counts, pr_counts = _new_counters()
+    matchup_counts, synergy_counts, ind_counts, pr_counts, ind_full_counts = _new_counters()
     _count_feather_rows(
-        cfg, df, matchup_counts, synergy_counts, ind_counts, pr_counts)
+        cfg, df, matchup_counts, synergy_counts, ind_counts, pr_counts,
+        ind_full_counts)
     return _counters_to_partial_dfs(
-        matchup_counts, synergy_counts, ind_counts, pr_counts)
+        matchup_counts, synergy_counts, ind_counts, pr_counts,
+        ind_full_counts)
 
 
 def merge_partials(
@@ -490,11 +521,25 @@ def merge_partials(
     s = _concat("synergy")
     i = _concat("individual")
     pr = _concat("pr")
+    # individual_full may be absent on legacy cached partials. For those
+    # entries fall back to their `individual` frame so the LOO baseline
+    # still has something sane (matches pre-fix behavior for that partial,
+    # while freshly computed partials contribute proper cross-tier counts).
+    full_frames = []
+    for p in partials:
+        f = p.get("individual_full")
+        if f is not None and not f.empty:
+            full_frames.append(f)
+        elif not p["individual"].empty:
+            full_frames.append(p["individual"])
+    i_full = (pd.concat(full_frames, ignore_index=True, copy=False)
+              if full_frames else pd.DataFrame())
 
     matchup_counts: dict = defaultdict(lambda: defaultdict(lambda: [0, 0]))
     synergy_counts: dict = defaultdict(lambda: defaultdict(lambda: [0, 0]))
     ind_counts: dict = defaultdict(lambda: [0, 0])
     pr_counts: dict = defaultdict(int)
+    ind_full_counts: dict = defaultdict(lambda: [0, 0])
 
     if not m.empty:
         agg = m.groupby(["role_a", "role_b", "champion", "opponent"],
@@ -518,8 +563,14 @@ def merge_partials(
             games=("games", "sum"))
         for lane_l, ch, g in agg.itertuples(index=False, name=None):
             pr_counts[(lane_l, ch)] = int(g)
+    if not i_full.empty:
+        agg = i_full.groupby(["champion", "role"], as_index=False).agg(
+            games=("games", "sum"), wins=("wins", "sum"))
+        for ch, role, g, w in agg.itertuples(index=False, name=None):
+            ind_full_counts[(ch, role)] = [int(g), int(w)]
 
-    return _finalize(cfg, matchup_counts, synergy_counts, ind_counts, pr_counts)
+    return _finalize(cfg, matchup_counts, synergy_counts, ind_counts,
+                     pr_counts, ind_full_counts)
 
 
 def write_partial(out_dir: Path, partial: dict[str, pd.DataFrame]) -> None:
@@ -530,8 +581,24 @@ def write_partial(out_dir: Path, partial: dict[str, pd.DataFrame]) -> None:
 
 
 def read_partial(in_dir: Path) -> dict[str, pd.DataFrame]:
-    """Load a per-feather partial previously written by `write_partial`."""
-    return {k: pd.read_parquet(in_dir / f"{k}.parquet") for k in _PARTIAL_KINDS}
+    """Load a per-feather partial previously written by `write_partial`.
+
+    Legacy partials (pre-individual_full) omit that file; we substitute an
+    empty DataFrame so merge_partials falls back to ind_counts for the
+    LOO baseline. Once the cache is rebuilt the proper counter is used.
+    """
+    out: dict[str, pd.DataFrame] = {}
+    for k in _PARTIAL_KINDS:
+        p = in_dir / f"{k}.parquet"
+        if p.exists():
+            out[k] = pd.read_parquet(p)
+        else:
+            if k == "individual_full":
+                out[k] = pd.DataFrame(
+                    columns=["champion", "role", "games", "wins"])
+            else:
+                raise FileNotFoundError(p)
+    return out
 
 
 def write_aggregates(out_dir: Path, dfs: dict[str, pd.DataFrame]) -> None:
