@@ -27,11 +27,11 @@ on:
         type: choice
         options: [fast, full]
       tier:
-        description: "Tier to refresh"
+        description: "Tier to refresh (use 'all' for every tier)"
         required: true
         default: "diamond"
         type: choice
-        options: [silver, gold, platinum, emerald, diamond, master_plus]
+        options: [all, silver, gold, platinum, emerald, diamond, master_plus]
 
 permissions:
   contents: read
@@ -85,12 +85,14 @@ jobs:
             echo "kind=fast" >> "$GITHUB_OUTPUT"
           fi
 
-      # On manual dispatch, only the selected tier runs the actual refresh;
-      # other matrix legs no-op. Scheduled runs always process every tier.
+      # On manual dispatch, the selected tier runs the actual refresh;
+      # use tier="all" to run every leg. Scheduled runs always process
+      # every tier.
       - name: Refresh (fast - skip hier-Bayes)
         if: >-
           steps.cadence.outputs.kind == 'fast' &&
           (github.event_name != 'workflow_dispatch' ||
+           github.event.inputs.tier == 'all' ||
            github.event.inputs.tier == matrix.tier)
         run: python data_prep/refresh.py --skip hier
 
@@ -98,5 +100,6 @@ jobs:
         if: >-
           steps.cadence.outputs.kind == 'full' &&
           (github.event_name != 'workflow_dispatch' ||
+           github.event.inputs.tier == 'all' ||
            github.event.inputs.tier == matrix.tier)
         run: python data_prep/refresh.py
