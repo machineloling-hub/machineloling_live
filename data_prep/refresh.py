@@ -47,6 +47,7 @@ sys.path.insert(0, str(ROOT / "_reference_backend"))
 
 from aggregate_matches import write_aggregates  # noqa: E402
 from incremental import aggregate_incremental  # noqa: E402
+import irt  # noqa: E402
 from refresh_config import RefreshConfig  # noqa: E402
 from shrinkage import (add_eb_columns, add_hier_columns,  # noqa: E402
                         tau_sidecar_rows)
@@ -180,6 +181,20 @@ def _merge_preserving_hier(new_csv: Path, staged_csv: Path) -> None:
     merged.to_csv(new_csv, index=False)
 
 
+def _stage_irt(cfg: RefreshConfig, feather_paths: list[Path],
+               refreshed_dir: Path) -> Path | None:
+    """Fit the IRT theta table from the raw feathers and drop it next to
+    the aggregated CSVs. Empty result (no in-tier matches) → no-op."""
+    print("[irt] fitting item-response theta")
+    df = irt.fit_theta(cfg, feather_paths)
+    if df.empty:
+        print("[irt] no rows (empty in-tier roster) — skipped")
+        return None
+    path = irt.write_theta(refreshed_dir, df)
+    print(f"[irt] wrote {path.name}: {len(df)} rows")
+    return path
+
+
 def _stage_collect(cfg: RefreshConfig) -> Path:
     """Copy this tier's CSVs into the shared staging dir, plus rename
     pr_table.parquet → pr_table_{tier}.parquet so other tiers' PR tables
@@ -200,6 +215,10 @@ def _stage_collect(cfg: RefreshConfig) -> Path:
                 "individual_wr.csv"):
         for s in src.glob(pat):
             shutil.copy2(s, STAGING_DIR / s.name)
+    # Per-tier IRT theta table (renamed so siblings can coexist alongside).
+    theta = src / "theta_table.parquet"
+    if theta.exists():
+        shutil.copy2(theta, STAGING_DIR / f"theta_table_{cfg.tier}.parquet")
     # Rename PR parquet to tier-keyed filename.
     pr = src / "pr_table.parquet"
     if pr.exists():
@@ -235,7 +254,7 @@ def _stage_collect(cfg: RefreshConfig) -> Path:
     return STAGING_DIR
 
 
-def _stage_pack(staging_dir: Path) -> list[Path]:
+def _stage_pack(cfg: RefreshConfig, staging_dir: Path) -> list[Path]:
     print("[pack] running pack_matrices.py + pack_champions.py")
     env = os.environ.copy()
     env["POOL_DESIGNER_DATA_DIR"] = str(staging_dir)
@@ -244,7 +263,13 @@ def _stage_pack(staging_dir: Path) -> list[Path]:
         subprocess.run([py, str(ROOT / "data_prep" / script)],
                        env=env, check=True, cwd=str(ROOT))
     dist = ROOT / "dist"
-    return [dist / "matrices.bin", dist / "index.json", dist / "champions.json"]
+    out = [dist / "matrices.bin", dist / "index.json", dist / "champions.json"]
+    # Ship this tier's theta table alongside the matrices so consumers can
+    # opt in to IRT-based displays without a separate fetch path.
+    theta = staging_dir / f"theta_table_{cfg.tier}.parquet"
+    if theta.exists():
+        out.append(theta)
+    return out
 
 
 def _stage_upload(cfg: RefreshConfig, artifacts: list[Path], refresh_kind: str) -> None:
@@ -259,7 +284,8 @@ def _stage_upload(cfg: RefreshConfig, artifacts: list[Path], refresh_kind: str) 
     print(f"[upload] manifest updated: {len(manifest.get('tiers', {}))} tier(s) tracked")
 
 
-STAGES = ["pull", "aggregate", "eb", "hier", "collect", "pack", "upload"]
+STAGES = ["pull", "aggregate", "irt", "eb", "hier", "collect", "pack",
+          "upload"]
 
 
 def main() -> None:
@@ -291,6 +317,10 @@ def main() -> None:
         if not feathers:
             feathers = _stage_pull(cfg)
         refreshed = _stage_aggregate(cfg, feathers)
+    if "irt" not in skip:
+        if not feathers:
+            feathers = _stage_pull(cfg)
+        _stage_irt(cfg, feathers, refreshed)
     if "eb" not in skip:
         _stage_eb(refreshed)
     if "hier" not in skip:
@@ -298,12 +328,15 @@ def main() -> None:
     if "collect" not in skip:
         _stage_collect(cfg)
     if "pack" not in skip:
-        artifacts = _stage_pack(STAGING_DIR)
+        artifacts = _stage_pack(cfg, STAGING_DIR)
     if "upload" not in skip:
         if not artifacts:
             dist = ROOT / "dist"
             artifacts = [dist / "matrices.bin", dist / "index.json",
                          dist / "champions.json"]
+            theta = STAGING_DIR / f"theta_table_{cfg.tier}.parquet"
+            if theta.exists():
+                artifacts.append(theta)
         # "full" if hier-Bayes ran this tick, "fast" if we skipped it.
         refresh_kind = "fast" if "hier" in skip else "full"
         _stage_upload(cfg, artifacts, refresh_kind)

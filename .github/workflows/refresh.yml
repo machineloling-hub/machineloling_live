@@ -94,7 +94,7 @@ jobs:
           (github.event_name != 'workflow_dispatch' ||
            github.event.inputs.tier == 'all' ||
            github.event.inputs.tier == matrix.tier)
-        run: python data_prep/refresh.py --skip hier
+        run: python data_prep/refresh.py --skip hier,irt
 
       - name: Refresh (full - includes hier-Bayes)
         if: >-

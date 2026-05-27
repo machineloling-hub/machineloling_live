@@ -10,3 +10,5 @@ boto3
 numpyro>=0.13
 jax>=0.4
 jaxlib>=0.4
+# IRT (data_prep/irt.py): logistic regression over sparse champ-role design.
+scikit-learn>=1.3

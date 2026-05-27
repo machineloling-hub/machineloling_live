@@ -147,6 +147,8 @@ def _content_type(suffix: str) -> str | None:
         return "application/octet-stream"
     if suffix == ".json":
         return "application/json"
+    if suffix == ".parquet":
+        return "application/vnd.apache.parquet"
     return None
 
 

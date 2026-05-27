@@ -245,26 +245,66 @@ def _finalize(
         out["individual_wr"] = pd.DataFrame(
             columns=["champion", "role", "games", "wins", "win_rate"])
 
-    # Per-(champion, role) win-rate lookup, used for expected_wr below.
-    wr_lookup = {(ch, role): (w / g) if g else 0.5
-                 for (ch, role), (g, w) in ind_counts.items()}
+    # Per-(champion, role) totals; reused below as the LOO baseline source
+    # so we don't have to recompute (games, wins) on every cell.
+    ind_g_lookup = {(ch, role): g for (ch, role), (g, w) in ind_counts.items()}
+    ind_w_lookup = {(ch, role): w for (ch, role), (g, w) in ind_counts.items()}
+
+    def _loo_wr(ch: str, role: str, ex_g: int, ex_w: int) -> tuple[float, int]:
+        """Leave-opponent-out WR for (ch, role): subtract the cell's games
+        and wins from the champ-role totals. Returns (wr, remaining_games).
+        Falls back to 0.5 / 0 when nothing's left after exclusion (cell
+        dominates the champ's playtime)."""
+        g_tot = ind_g_lookup.get((ch, role), 0)
+        w_tot = ind_w_lookup.get((ch, role), 0)
+        g_rem = g_tot - ex_g
+        w_rem = w_tot - ex_w
+        if g_rem <= 0:
+            return 0.5, 0
+        return w_rem / g_rem, g_rem
+
+    def _baseline_var_pp(wr: float, n: int) -> float:
+        """Variance of a binomial WR estimate, scaled to pp². Used by the
+        delta-method propagation into se_pp."""
+        if n <= 0:
+            return 0.0
+        return 10000.0 * wr * (1 - wr) / n
 
     # ── matchups ────────────────────────────────────────────────────────
+    # Baseline: log-5 / Bradley-Terry on LOO win rates. Matchup is a
+    # head-to-head framing so the log-odds-DIFFERENCE form is the natural
+    # baseline. expected_wr propagates baseline uncertainty into se_pp via
+    # the delta method (sensitivity of the sigmoid to its input variance).
     for (ra, rb), cells in matchup_counts.items():
         rows = []
         for (ca, cb), (g, w) in cells.items():
             if g < cfg.min_games_cell:
                 continue
             obs = w / g
-            wra = wr_lookup.get((ca, ra), 0.5)
-            wrb = wr_lookup.get((cb, rb), 0.5)
-            # expected_wr from independent-WR mixing (same formula the
-            # existing _data/ CSVs use). p = wra(1-wrb) / (wra(1-wrb)+wrb(1-wra)).
+            # Wins from cb's perspective in this cell = (games - ca's wins).
+            # Same-role pairs are double-counted (both orderings stored), so
+            # for the LOO of cb we subtract the (cb, ca) cell's count which
+            # equals (g, g - w). This produces the same arithmetic as
+            # subtracting (g, g - w) from cb's totals directly.
+            wra, na_rem = _loo_wr(ca, ra, g, w)
+            wrb, nb_rem = _loo_wr(cb, rb, g, g - w)
             num = wra * (1 - wrb)
             den = num + wrb * (1 - wra)
             expected = num / den if den > 0 else 0.5
             delta = obs - expected
-            se_pp = 100.0 * float(np.sqrt(obs * (1 - obs) / max(g, 1)))
+            # SE: observed binomial variance + propagated baseline variance.
+            # Var(logit_E) ≈ 1/(n_A·wa·(1-wa)) + 1/(n_B·wb·(1-wb))
+            # Var(E)      ≈ (E·(1-E))² · Var(logit_E)            (delta method)
+            var_obs_pp = _baseline_var_pp(obs, g)
+            inv_a = 0.0
+            inv_b = 0.0
+            if na_rem > 0 and 0 < wra < 1:
+                inv_a = 1.0 / (na_rem * wra * (1 - wra))
+            if nb_rem > 0 and 0 < wrb < 1:
+                inv_b = 1.0 / (nb_rem * wrb * (1 - wrb))
+            var_logit_e = inv_a + inv_b
+            var_e_pp = 10000.0 * (expected * (1 - expected)) ** 2 * var_logit_e
+            se_pp = float(np.sqrt(var_obs_pp + var_e_pp))
             rows.append({
                 f"champion_{ra}": ca,
                 f"opponent_{rb}": cb,
@@ -280,19 +320,29 @@ def _finalize(
                 "games", ascending=False).reset_index(drop=True)
 
     # ── synergies ───────────────────────────────────────────────────────
+    # Baseline: percentage-point additive on LOO win rates rather than the
+    # old logit-additive (a·b / (a·b + (1-a)(1-b))). The logit form
+    # over-predicts when both champs are individually strong (two 55%
+    # champs predict ~60%), which made the delta systematically negative
+    # for popular high-WR pairings. The pp-additive baseline avoids that
+    # saturation. Same delta-method variance propagation as matchups.
     for (ra, rb), cells in synergy_counts.items():
         rows = []
         for (ca, cb), (g, w) in cells.items():
             if g < cfg.min_games_cell:
                 continue
             obs = w / g
-            wra = wr_lookup.get((ca, ra), 0.5)
-            wrb = wr_lookup.get((cb, rb), 0.5)
-            num = wra * wrb
-            den = num + (1 - wra) * (1 - wrb)
-            expected = num / den if den > 0 else 0.5
+            wra, na_rem = _loo_wr(ca, ra, g, w)
+            wrb, nb_rem = _loo_wr(cb, rb, g, w)
+            expected = 0.5 + (wra - 0.5) + (wrb - 0.5)
+            expected = max(0.05, min(0.95, expected))
             delta = obs - expected
-            se_pp = 100.0 * float(np.sqrt(obs * (1 - obs) / max(g, 1)))
+            var_obs_pp = _baseline_var_pp(obs, g)
+            # pp-additive: Var(E) = Var(wra) + Var(wrb) (independent samples
+            # — LOO sets disjoint in the bulk).
+            var_a_pp = _baseline_var_pp(wra, na_rem)
+            var_b_pp = _baseline_var_pp(wrb, nb_rem)
+            se_pp = float(np.sqrt(var_obs_pp + var_a_pp + var_b_pp))
             rows.append({
                 f"champion_{ra}": ca,
                 f"champion_{rb}": cb,

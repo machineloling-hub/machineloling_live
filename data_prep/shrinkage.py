@@ -103,10 +103,20 @@ def _hier_fit(
 
     Model:
         δ_obs[k] ~ N(true_δ[k], se[k]²)
-        true_δ[k] ~ N(0, sqrt(τ_a[i_k]² + τ_b[j_k]²))
+        true_δ[k] = α_a[i_k] + β_b[j_k] + cell_sd[k] · z[k]
+        cell_sd[k] = sqrt(τ_a[i_k]² + τ_b[j_k]²)
+        α_a[i] ~ N(0, σ_α_a²)
+        β_b[j] ~ N(0, σ_α_b²)            (= -α_a if mirror — antisymmetric)
+        σ_α_a, σ_α_b ~ HalfNormal(prior_scale)
         τ_a[i] ~ HalfNormal(σ_τ_a)
-        τ_b[j] ~ HalfNormal(σ_τ_b)        (same population if role_a == role_b)
+        τ_b[j] ~ HalfNormal(σ_τ_b)       (same population if mirror)
         σ_τ_a, σ_τ_b ~ HalfNormal(prior_scale)
+
+    The mean-effect (α, β) terms let champions surface as systematically
+    over- or under-performing vs the field; the τ terms capture remaining
+    cell-level variability after the means are accounted for. Mirror
+    matchups (role_a == role_b) impose β = -α so the model respects
+    P(A beats B) = 1 - P(B beats A) at the population level.
 
     Returns:
         shrunk_pp:   posterior mean of true_δ for each row of df (length N)
@@ -136,8 +146,28 @@ def _hier_fit(
     n_cells = int(delta_obs.shape[0])
 
     def model():
+        # Per-champion mean effect (α). Non-centered for NUTS stability.
+        sigma_alpha_a = numpyro.sample("sigma_alpha_a",
+                                       dist.HalfNormal(prior_scale))
+        alpha_a_raw = numpyro.sample(
+            "alpha_a_raw",
+            dist.Normal(jnp.zeros(n_a), jnp.ones(n_a)).to_event(1))
+        alpha_a = numpyro.deterministic("alpha_a", sigma_alpha_a * alpha_a_raw)
+        if mirror:
+            # Same-role matchups are antisymmetric: A beats B ⇒ B loses to A,
+            # so β_b = -α_a holds the (i,j) and (j,i) cells in agreement.
+            beta_b = -alpha_a
+        else:
+            sigma_alpha_b = numpyro.sample("sigma_alpha_b",
+                                           dist.HalfNormal(prior_scale))
+            beta_b_raw = numpyro.sample(
+                "beta_b_raw",
+                dist.Normal(jnp.zeros(n_b), jnp.ones(n_b)).to_event(1))
+            beta_b = numpyro.deterministic("beta_b", sigma_alpha_b * beta_b_raw)
+
+        # Per-champion variance scale (τ). Same non-centered HalfNormal as
+        # before — captures residual cell variability around α + β.
         sigma_a = numpyro.sample("sigma_a", dist.HalfNormal(prior_scale))
-        # Non-centered τ so NUTS mixes well at the boundary.
         tau_a_raw = numpyro.sample("tau_a_raw",
                                    dist.HalfNormal(jnp.ones(n_a)).to_event(1))
         tau_a = numpyro.deterministic("tau_a", sigma_a * tau_a_raw)
@@ -148,11 +178,14 @@ def _hier_fit(
             tau_b_raw = numpyro.sample("tau_b_raw",
                                        dist.HalfNormal(jnp.ones(n_b)).to_event(1))
             tau_b = numpyro.deterministic("tau_b", sigma_b * tau_b_raw)
+
+        cell_mean = alpha_a[i_arr] + beta_b[j_arr]
         cell_sd = jnp.sqrt(tau_a[i_arr] ** 2 + tau_b[j_arr] ** 2 + 1e-8)
         # Non-centered cell effect.
         z = numpyro.sample("z", dist.Normal(jnp.zeros(n_cells),
                                             jnp.ones(n_cells)).to_event(1))
-        true_delta = numpyro.deterministic("true_delta", cell_sd * z)
+        true_delta = numpyro.deterministic("true_delta",
+                                           cell_mean + cell_sd * z)
         numpyro.sample("obs", dist.Normal(true_delta, se), obs=delta_obs)
 
     rng = jax.random.PRNGKey(seed)
