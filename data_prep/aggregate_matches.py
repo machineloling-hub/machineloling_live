@@ -264,28 +264,35 @@ def _finalize(
         out["individual_wr"] = pd.DataFrame(
             columns=["champion", "role", "games", "wins", "win_rate"])
 
-    # Per-(champion, role) totals used for the LOO baseline. Prefer the
-    # tier-agnostic ind_full counts so cell subtraction is consistent with
-    # matchup/synergy semantics (those count every pair in any in-tier
-    # match, not just same-tier participants). Fall back to ind_counts on
-    # legacy partials that don't carry the full counter.
+    # Per-(champion, role) totals used for the baseline. Source from
+    # ind_full when available (counts every participant in any in-tier
+    # match, matching matchup/synergy denominators).
     src = ind_full_counts if ind_full_counts else ind_counts
     ind_g_lookup = {(ch, role): g for (ch, role), (g, w) in src.items()}
     ind_w_lookup = {(ch, role): w for (ch, role), (g, w) in src.items()}
 
     def _loo_wr(ch: str, role: str, ex_g: int, ex_w: int) -> tuple[float, int]:
-        """Leave-opponent-out WR for (ch, role): subtract the cell's games
-        and wins from the champ-role totals. Returns (wr, remaining_games).
+        """Baseline WR for (ch, role).
 
-        Defensive clamp in case of residual count drift (e.g., dropped
-        rows from malformed champion names)."""
+        Originally a leave-one-out subtraction (remove the cell's games
+        and wins from the champ totals) — intended to break the
+        circularity of including the cell in its own baseline. In
+        practice that produced catastrophic variance in thin-data tiers:
+        a champ with ~60 role games whose most common opponent supplies
+        ~50 of them is left with single-digit support, and log-5 then
+        amplifies the residual into ±60pp per-cell deltas (the
+        "matchups appear flipped / wildly large" symptom).
+
+        Use the full champ-role WR. The bias from including one cell in
+        the denominator is bounded by cell_games / total_games — well
+        under 1pp for any champ with a handful of opponents. The
+        `ex_g, ex_w` args are kept for call-site stability.
+        """
         g_tot = ind_g_lookup.get((ch, role), 0)
         w_tot = ind_w_lookup.get((ch, role), 0)
-        g_rem = g_tot - ex_g
-        w_rem = w_tot - ex_w
-        if g_rem <= 0 or w_rem < 0 or w_rem > g_rem:
+        if g_tot <= 0:
             return 0.5, 0
-        return w_rem / g_rem, g_rem
+        return w_tot / g_tot, g_tot
 
     def _baseline_var_pp(wr: float, n: int) -> float:
         """Variance of a binomial WR estimate, scaled to pp². Used by the
