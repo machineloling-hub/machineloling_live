@@ -56,7 +56,7 @@ jobs:
       S3_PREFIX_OUT: ${{ secrets.S3_PREFIX_OUT || 'artifacts/' }}
       REFRESH_TIER: ${{ matrix.tier }}
       REFRESH_QUEUE: ranked_solo
-      REFRESH_PATCH_RANGE: "16.1-16.5"
+      REFRESH_PATCH_RANGE: "16.1-16.10"
       REFRESH_REGIONS: "NA1,KR,EUW1"
       PYTHONIOENCODING: "utf-8"
     steps:
