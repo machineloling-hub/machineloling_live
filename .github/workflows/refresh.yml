@@ -59,6 +59,10 @@ jobs:
       REFRESH_PATCH_RANGE: "16.1-16.10"
       REFRESH_REGIONS: "NA1,KR,EUW1,VN2"
       PYTHONIOENCODING: "utf-8"
+      # Opt JS actions (checkout, setup-python) into Node.js 24. Node 20 is
+      # being removed from runners; this flag forces the newer runtime
+      # ahead of the June 2 2026 default-flip.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - uses: actions/checkout@v4
 

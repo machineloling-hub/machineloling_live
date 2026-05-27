@@ -21,6 +21,10 @@ env:
   # wasm-bindgen and wasm-bindgen-cli must match exactly — schema is
   # unstable across minor versions.
   WASM_BINDGEN_VERSION: "0.2.120"
+  # Opt JS actions (checkout, setup-python, upload-pages-artifact, etc.)
+  # into Node.js 24. Node 20 is being removed from runners; this flag
+  # forces the newer runtime ahead of the June 2 2026 default-flip.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   build:
