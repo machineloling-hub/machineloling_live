@@ -102,19 +102,30 @@ pub fn blind_stats(
                 Some(p) => p,
                 None => continue,
             };
-            // Blindability measures *spread* of a row across opponents. We
-            // intentionally use the RAW (pre-shrinkage) matrix here: hier
-            // shrinkage pulls low-sample cells toward 0, which artificially
-            // compresses the row of low-PR champs (making them look very
-            // blindable) and leaves high-PR rows alone (making them look
-            // unblindable by comparison). The aggregation pipeline already
-            // filters pairs by `min_games_cell` (default 50), so the
-            // remaining sampling noise contributes ≤ ~0.07 SD per cell —
-            // small relative to true between-opponent variation.
-            // `shrink_alpha` is intentionally ignored here.
+            // Blindability measures *spread* of a row of observed win-rates
+            // across opponents (per machineloling.com/2024/12/17/blindability).
+            // What's shipped in `pair.raw` is the log5-baseline-subtracted
+            // delta (pp), not the observed WR. A champion who consistently
+            // over-/under-performs their log5 baseline against every
+            // opponent has tiny delta SD but their *actual* observed WR
+            // could still swing dramatically with opponent strength — they
+            // are NOT blindable. We reconstruct observed WR per cell:
+            //   obs[r,c] = delta_pp[r,c] / 100 + expected_wr(wr_r, wr_c)
+            // where `expected_wr` is the log5 (matchup) or pp-additive
+            // (synergy) baseline matching the pipeline in
+            // data_prep/aggregate_matches.py.
+            // We use the RAW (pre-shrinkage) delta here: hier shrinkage
+            // pulls low-sample deltas to ~0, which would just push every
+            // reconstructed obs cell toward its log5 baseline and inject
+            // an opponent-strength gradient — exactly what we don't want.
+            // The aggregation pipeline already filters pairs by
+            // `min_games_cell` (default 50). `shrink_alpha` is ignored.
             let _ = shrink_alpha;
             let mat = &pair.raw;
             let pr_pos = store.pr_for_role(pos, patch);
+            let wr_row_map = store.wr_by_role.get(my_role);
+            let wr_col_map = store.wr_by_role.get(pos);
+            let is_matchup = mode == "matchup";
 
             let keep_idx: Vec<usize> = pair
                 .cols
@@ -152,7 +163,38 @@ pub fn blind_stats(
 
             let sds: Vec<f32> = (0..n_rows)
                 .map(|r| {
-                    let row: Vec<f32> = keep_idx.iter().map(|&c| mat[[r, c]]).collect();
+                    let row_champ = &pair.rows[r];
+                    let wr_r = wr_row_map
+                        .and_then(|m| m.get(row_champ.as_str()))
+                        .copied()
+                        .unwrap_or(f32::NAN);
+                    let row: Vec<f32> = keep_idx
+                        .iter()
+                        .map(|&c| {
+                            let delta_pp = mat[[r, c]];
+                            if !delta_pp.is_finite() || !wr_r.is_finite() {
+                                return f32::NAN;
+                            }
+                            let col_champ = &pair.cols[c];
+                            let wr_c = match wr_col_map
+                                .and_then(|m| m.get(col_champ.as_str()))
+                                .copied()
+                            {
+                                Some(v) if v.is_finite() => v,
+                                _ => return f32::NAN,
+                            };
+                            let expected = if is_matchup {
+                                log5_expected(wr_r, wr_c)
+                            } else {
+                                // pp-additive synergy baseline, clamped per
+                                // aggregate_matches.py.
+                                ((wr_r - 0.5) + (wr_c - 0.5) + 0.5).clamp(0.05, 0.95)
+                            };
+                            // delta is in pp; convert back to fractional WR
+                            // before reconstructing the observed WR.
+                            delta_pp / 100.0 + expected
+                        })
+                        .collect();
                     match &weights {
                         Some(w) => weighted_sd(&row, w),
                         None => unbiased_sd(&row),
@@ -337,6 +379,15 @@ pub fn blindability(
         lane_matchup_pos: sorted_lane,
         lane_synergy_pos: lane_synergy_pos.map(String::from),
     })
+}
+
+/// Log5 / Bradley-Terry expected WR of champ A vs champ B given their
+/// individual WRs. Mirrors `expected_wr` in
+/// data_prep/aggregate_matches.py (matchup branch).
+fn log5_expected(wr_a: f32, wr_b: f32) -> f32 {
+    let num = wr_a * (1.0 - wr_b);
+    let den = num + wr_b * (1.0 - wr_a);
+    if den > 0.0 { num / den } else { 0.5 }
 }
 
 fn weighted_sd(x: &[f32], w: &[f32]) -> f32 {
