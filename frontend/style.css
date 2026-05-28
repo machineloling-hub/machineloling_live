@@ -2047,3 +2047,114 @@ tr.in-pool-row td { background: var(--accent-soft); }
   #main { padding: 0; max-width: none; }
   body { background: white; color: black; }
 }
+
+/* -- Pool Health tab ---------------------------------------------------- */
+.health-headline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--s-4);
+  margin: 0 0 var(--s-6);
+}
+.health-stat {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--s-4) var(--s-5);
+  box-shadow: var(--shadow-sm);
+}
+.health-stat-label { font-size: var(--fs-sm); font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
+.health-stat-value { font-size: 32px; font-weight: 700; color: var(--text); margin: 4px 0 2px; line-height: 1; }
+.health-stat-value .pct { font-size: 18px; color: var(--text-dim); font-weight: 600; margin-left: 2px; }
+.health-stat-sub { font-size: var(--fs-sm); color: var(--text-dim); }
+.health-stat-sub .muted { color: var(--text-muted); }
+
+.health-cov-cell { display: flex; align-items: center; gap: 10px; min-width: 160px; }
+.health-cov-bar {
+  flex: 1; height: 8px; background: var(--surface-3);
+  border-radius: 4px; overflow: hidden; min-width: 60px;
+}
+.health-cov-bar > div { height: 100%; border-radius: 4px; transition: width .25s ease; }
+.health-cov-text { font-size: var(--fs-sm); white-space: nowrap; }
+.health-cov-text .muted { color: var(--text-muted); margin-left: 4px; }
+
+.th-desc { display: block; font-weight: 400; font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.cell-na { text-align: center; color: var(--text-muted); }
+
+.redundancy-table td { vertical-align: middle; }
+
+/* -- Build From Scratch tab --------------------------------------------- */
+.builder-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-5);
+  margin: var(--s-4) 0;
+}
+@media (max-width: 900px) { .builder-grid { grid-template-columns: 1fr; } }
+.builder-col {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--s-3) var(--s-4) var(--s-4);
+}
+.builder-col .section-h { margin-top: 0; }
+.pb-pool-stack {
+  position: relative;
+  display: flex; flex-direction: column; gap: var(--s-2);
+}
+.pb-pool-stack .pool-add-slot { position: relative; }
+.pb-pool-stack input[type='text'] {
+  width: 100%; padding: 6px 10px; border-radius: var(--r-sm);
+  background: var(--surface-0); color: var(--text);
+  border: 1px solid var(--border);
+}
+.pb-pool-stack input[type='text']:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft, rgba(111,226,181,0.15));
+}
+
+.builder-controls {
+  display: flex; flex-wrap: wrap; gap: var(--s-4);
+  align-items: center; padding: var(--s-3) 0 var(--s-5);
+}
+.builder-target { display: flex; flex-direction: column; gap: 4px; min-width: 200px; }
+.builder-target input[type='range'] { width: 200px; }
+
+.pb-combo-count {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  border: 1px solid var(--border);
+}
+.pb-combo-count.ok { color: var(--text); border-color: var(--accent-soft, transparent); }
+.pb-combo-count.warn,
+.pb-combo-count.over { color: #e69458; border-color: rgba(217,122,74,0.4); background: rgba(217,122,74,0.08); }
+.pb-combo-count b { color: var(--text); }
+
+.pb-pool-icon { width: 18px; height: 18px; border-radius: 2px; vertical-align: middle; margin: 0 1px; }
+.pb-pool-cell { line-height: 1.0; white-space: nowrap; }
+
+.pb-selected-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: var(--s-3) var(--s-4); margin-top: var(--s-3);
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: var(--r-md); font-size: var(--fs-body);
+}
+.pb-selected-label { font-weight: 600; color: var(--text); margin-right: 6px; }
+.pb-sep { color: var(--text-muted); margin: 0 4px; }
+
+.pb-preview-head {
+  display: flex; align-items: baseline; gap: var(--s-4);
+  margin-top: var(--s-5);
+}
+.pb-view-label {
+  font-size: var(--fs-sm); color: var(--text-dim);
+  display: flex; align-items: center; gap: 6px;
+}
+
+#pb-result-table tr.selected td {
+  background: var(--accent-soft, rgba(111,226,181,0.12)) !important;
+  box-shadow: inset 3px 0 0 var(--accent);
+}

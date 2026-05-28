@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=69">
+<link rel="stylesheet" href="style.css?v=70">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -135,6 +135,8 @@
       <button class="tab-btn" data-view="replacements">Expand Your Pool</button>
       <button class="tab-btn" data-view="blindability">Blindability</button>
       <button class="tab-btn" data-view="meta">Meta summary</button>
+      <button class="tab-btn" data-view="health">Pool Health</button>
+      <button class="tab-btn" data-view="builder">Build From Scratch</button>
     </div>
 
     <!-- Welcome / landing tab -->
@@ -161,6 +163,10 @@
               <span class="wt-title">Synergy Coverage</span>
               <span class="wt-desc">Heatmap of your pool's win-rate edge when paired with every common teammate, by role.</span>
             </button>
+            <button class="welcome-tile" data-go="health">
+              <span class="wt-title">Pool Health</span>
+              <span class="wt-desc">At-a-glance summary of coverage, blindability, and which pool members overlap — find the holes and the redundancies.</span>
+            </button>
           </div>
         </div>
 
@@ -170,6 +176,10 @@
             <button class="welcome-tile" data-go="replacements">
               <span class="wt-title">Expand Your Pool</span>
               <span class="wt-desc">Find the best champion to add next, ranked by what matters to you.</span>
+            </button>
+            <button class="welcome-tile" data-go="builder">
+              <span class="wt-title">Build From Scratch</span>
+              <span class="wt-desc">Lock in a few core champions, drop in candidates, and let the engine rank every combo by total weighted strength.</span>
             </button>
           </div>
         </div>
@@ -257,12 +267,78 @@
       <div id="repl-table"></div>
     </section>
 
-    </section>
-
     <!-- Meta summary -->
     <section id="view-meta" class="view">
       <h2 style="color:var(--text);margin-bottom:6px;">Meta summary — <span id="meta-view-patch-label">patch …</span> <span class="info-tip" tabindex="0" role="button" aria-label="More info" data-tip="Stacked bars show each champion's share of role games, Silver → Master+. Bars sum to 100% per bracket. Ribbons connect the same champion across adjacent brackets so you can trace popularity shifts.">?</span></h2>
       <div id="meta-charts"></div>
+    </section>
+
+    <!-- Pool Health -->
+    <section id="view-health" class="view">
+      <div id="health-summary-head"></div>
+      <h3 class="section-h">Pool strength curves</h3>
+      <div id="health-strength"></div>
+      <h3 class="section-h">Coverage by enemy role</h3>
+      <div id="health-matchup-table"></div>
+      <h3 class="section-h">Coverage by partner role</h3>
+      <div id="health-synergy-table"></div>
+      <h3 class="section-h">Redundancy — who overlaps in your pool</h3>
+      <p class="muted" style="margin:-2px 0 8px;font-size:12px;">
+        Correlations measure how similarly two pool members perform across the
+        same opponents / partners. <b style="color:#3fb37f;">Green</b> = redundant
+        coverage; <b style="color:#d97a4a;">orange</b> = complementary picks.
+      </p>
+      <div id="health-redundancy-table"></div>
+      <div id="health-redundancy-heatmap" style="margin-top:18px;"></div>
+    </section>
+
+    <!-- Build From Scratch -->
+    <section id="view-builder" class="view">
+      <div class="eq-box" id="pb-equation"></div>
+      <div class="builder-grid">
+        <div class="builder-col">
+          <h3 class="section-h">Definite picks <span class="muted" style="font-weight:400;font-size:12px;">— always in the pool</span></h3>
+          <div class="pb-pool-stack">
+            <div id="pb-definite-chips" class="pool-chips"></div>
+            <div id="pb-definite-add" class="pool-add-slot">
+              <input id="pb-definite-search" type="text" placeholder="Add a champion…">
+              <div id="pb-definite-suggestions" class="pool-suggestions"></div>
+            </div>
+          </div>
+        </div>
+        <div class="builder-col">
+          <h3 class="section-h">Maybe picks <span class="muted" style="font-weight:400;font-size:12px;">— candidates to fill the rest</span></h3>
+          <div class="pb-pool-stack">
+            <div id="pb-maybe-chips" class="pool-chips"></div>
+            <div id="pb-maybe-add" class="pool-add-slot">
+              <input id="pb-maybe-search" type="text" placeholder="Add a candidate…">
+              <div id="pb-maybe-suggestions" class="pool-suggestions"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="builder-controls">
+        <label class="builder-target">
+          <span>Target pool size: <b id="pb-target-val">6</b></span>
+          <input id="pb-target" type="range" min="2" max="8" step="1" value="6">
+        </label>
+        <div id="pb-combo-count" class="pb-combo-count"></div>
+        <button id="pb-build" class="btn-primary" type="button">Build pools</button>
+      </div>
+
+      <h3 class="section-h">Ranked pools</h3>
+      <div id="pb-result-table"></div>
+
+      <div id="pb-selected-summary"></div>
+      <div id="pb-strength" style="margin-top:12px;"></div>
+
+      <div class="pb-preview-head">
+        <h3 class="section-h" style="margin:0;">Selected pool — coverage preview</h3>
+        <label class="pb-view-label">View:
+          <select id="pb-view" class="select-styled"></select>
+        </label>
+      </div>
+      <div id="pb-selected-hm"></div>
     </section>
   </main>
 </div>
@@ -275,7 +351,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=69"></script>
+<script type="module" src="src/main.js?v=70"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>

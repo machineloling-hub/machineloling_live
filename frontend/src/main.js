@@ -7,6 +7,8 @@ import { refreshCoverage, renderRoleSubTabs } from "./views/coverage.js";
 import { refreshBlindability } from "./views/blind.js";
 import { refreshReplacements } from "./views/replacements.js";
 import { refreshMeta } from "./views/meta.js";
+import { refreshHealth } from "./views/health.js";
+import { refreshBuilder, refreshComboCount, buildPools } from "./views/builder.js";
 
 const SYNERGY_DEFAULT_PARTNER = {
   "SUP": "ADC", "ADC": "SUP",
@@ -26,6 +28,8 @@ const VIEW_LABELS = {
   replacements: "Expand Your Pool",
   blindability: "Blindability",
   meta:         "Meta summary",
+  health:       "Pool Health",
+  builder:      "Build From Scratch",
 };
 
 
@@ -320,6 +324,8 @@ async function _refreshImpl() {
     else if (state.view === "blindability") await refreshBlindability();
     else if (state.view === "replacements") await refreshReplacements();
     else if (state.view === "meta") refreshMeta();
+    else if (state.view === "health") await refreshHealth();
+    else if (state.view === "builder") await refreshBuilder();
   } catch (e) {
     console.error(e);
     setStatus("error: " + e.message);
@@ -514,6 +520,49 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   });
 
   // (Pool Builder tab removed — pbDefMS/pbMayMS and pb-* controls dropped.)
+  // Pool Builder definite/maybe multi-selects + target slider + build button.
+  window.pbDefMS = makeMultiSelect({
+    chipsId: "#pb-definite-chips", searchId: "#pb-definite-search",
+    suggestionsId: "#pb-definite-suggestions",
+    getList: () => state.champsByRole[state.role] || [],
+    getSelected: () => state.pbDefinite,
+    setSelected: (v) => {
+      state.pbDefinite = v;
+      // Promote-to-definite removes the same champ from "maybe".
+      state.pbMaybe = state.pbMaybe.filter((c) => !v.includes(c));
+      state.pbBuiltRows = null; state.pbSelectedId = null;
+    },
+    max: 8,
+  });
+  window.pbMayMS = makeMultiSelect({
+    chipsId: "#pb-maybe-chips", searchId: "#pb-maybe-search",
+    suggestionsId: "#pb-maybe-suggestions",
+    getList: () => state.champsByRole[state.role] || [],
+    getSelected: () => state.pbMaybe,
+    setSelected: (v) => {
+      state.pbMaybe = v.filter((c) => !state.pbDefinite.includes(c));
+      state.pbBuiltRows = null; state.pbSelectedId = null;
+    },
+    max: 20,
+  });
+  $("#pb-definite-add")?.addEventListener("click", (e) => {
+    if (e.target.id !== "pb-definite-search") $("#pb-definite-search").focus();
+  });
+  $("#pb-maybe-add")?.addEventListener("click", (e) => {
+    if (e.target.id !== "pb-maybe-search") $("#pb-maybe-search").focus();
+  });
+  const pbTarget = $("#pb-target");
+  if (pbTarget) {
+    pbTarget.value = state.pbTarget;
+    $("#pb-target-val").textContent = state.pbTarget;
+    pbTarget.addEventListener("input", (e) => {
+      state.pbTarget = parseInt(e.target.value, 10);
+      $("#pb-target-val").textContent = state.pbTarget;
+      state.pbBuiltRows = null; state.pbSelectedId = null;
+      if (state.view === "builder") refresh();
+    });
+  }
+  $("#pb-build")?.addEventListener("click", () => buildPools());
 
   // Rank-bracket selector — populated from /api/meta. The "patches" field
   // now carries rank labels (silver | gold | ... | master_plus); kept under
