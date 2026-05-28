@@ -12,10 +12,9 @@
 
 use std::collections::{HashMap, HashSet};
 
-use ndarray::Array2;
 use serde::{Deserialize, Serialize};
 
-use crate::data::{DataStore, PairMats, ROLES};
+use crate::data::{DataStore, ROLES};
 
 #[derive(Deserialize)]
 pub struct BlindabilityRequest {
@@ -103,7 +102,18 @@ pub fn blind_stats(
                 Some(p) => p,
                 None => continue,
             };
-            let mat = blend_pair(pair, shrink_alpha);
+            // Blindability measures *spread* of a row across opponents. We
+            // intentionally use the RAW (pre-shrinkage) matrix here: hier
+            // shrinkage pulls low-sample cells toward 0, which artificially
+            // compresses the row of low-PR champs (making them look very
+            // blindable) and leaves high-PR rows alone (making them look
+            // unblindable by comparison). The aggregation pipeline already
+            // filters pairs by `min_games_cell` (default 50), so the
+            // remaining sampling noise contributes ≤ ~0.07 SD per cell —
+            // small relative to true between-opponent variation.
+            // `shrink_alpha` is intentionally ignored here.
+            let _ = shrink_alpha;
+            let mat = &pair.raw;
             let pr_pos = store.pr_for_role(pos, patch);
 
             let keep_idx: Vec<usize> = pair
@@ -327,16 +337,6 @@ pub fn blindability(
         lane_matchup_pos: sorted_lane,
         lane_synergy_pos: lane_synergy_pos.map(String::from),
     })
-}
-
-fn blend_pair(pair: &PairMats, alpha: f32) -> Array2<f32> {
-    if alpha >= 1.0 {
-        return pair.shrunk.clone();
-    }
-    if alpha <= 0.0 {
-        return pair.raw.clone();
-    }
-    &pair.shrunk * alpha + &pair.raw * (1.0 - alpha)
 }
 
 fn weighted_sd(x: &[f32], w: &[f32]) -> f32 {
