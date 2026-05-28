@@ -315,7 +315,9 @@ pub fn total_score_from_stats(
     w(st.matchup_in_lane, w_in_lane, sigma_in_lane)
         + w(st.matchup_out_of_lane, w_out_lane, sigma_out_lane)
         + w(st.synergy_z, w_synergy, sigma_synergy)
-        + w(st.blind_z, w_blind, sigma_blind)
+        // blind_z follows the blog convention: low = blindable. Negate so
+        // a positive `w_blind` still means "I want my pool blindable".
+        + w(-st.blind_z, w_blind, sigma_blind)
 }
 
 pub fn z_score_columns(mat: &Array2<f32>) -> Array2<f32> {

@@ -102,7 +102,7 @@ async function refreshBlindability() {
     type: "scatter", mode: "markers",
     x, y, text: labels,
     marker: { size: Math.round(iconPx * HOVER_SCALE), color: "rgba(0,0,0,0)" },
-    hovertemplate: "<b>%{text}</b><br>matchup z: %{x:.2f}<br>synergy z: %{y:.2f}<extra></extra>",
+    hovertemplate: "<b>%{text}</b><br>matchup z: %{x:.2f} (lower = more blindable)<br>synergy z: %{y:.2f} (lower = more blindable)<extra></extra>",
     hoverlabel: { align: "left" },
     showlegend: false,
   }];
@@ -114,12 +114,12 @@ async function refreshBlindability() {
     margin: { l: 80, r: 30, t: 60, b: 80 },
     title: { text: `${_roleTitle(state.role)} Blindability Map`, font: { size: 16, color: BLIND_COLOR } },
     xaxis: {
-      range: xlim, title: { text: "Matchup blindability z (→ better vs random opponent)", font: { color: "#e6c978" } },
+      range: xlim, title: { text: "Matchup variability z (← more blindable)", font: { color: "#e6c978" } },
       zeroline: true, zerolinecolor: "#555",
       gridcolor: "rgba(255,255,255,0.06)", tickfont: { color: "#e6c978" },
     },
     yaxis: {
-      range: ylim, title: { text: "Synergy blindability z (↑ better with random partner)", font: { color: "#7fc0e8" } },
+      range: ylim, title: { text: "Synergy variability z (↓ more blindable)", font: { color: "#7fc0e8" } },
       zeroline: true, zerolinecolor: "#555",
       gridcolor: "rgba(255,255,255,0.06)", tickfont: { color: "#7fc0e8" },
     },

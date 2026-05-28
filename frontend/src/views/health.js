@@ -100,9 +100,11 @@ function renderHealthTable(rows, mode, topX) {
     // Coverage bar: green for covered, red for uncovered.
     const pctGood = r.n_total > 0 ? (r.n_covered / r.n_total) : 0;
     const barColor = pctGood >= 0.8 ? "#3fb37f" : pctGood >= 0.5 ? "#d4c45c" : "#d97a4a";
+    // blind_z follows the blog convention: low z = blindable. Negate so
+    // the teal end of the gradient still reads as "blindable = good".
     const blindCell = r.blind_z == null
       ? '<td class="cell-na">—</td>'
-      : `<td style="background:${tealOrangeBg(r.blind_z)};color:#fff;text-align:right;font-weight:600;border-radius:3px;">${fmtSign(r.blind_z)}</td>`;
+      : `<td style="background:${tealOrangeBg(-r.blind_z)};color:#fff;text-align:right;font-weight:600;border-radius:3px;">${fmtSign(r.blind_z)}</td>`;
     const worstStr = r.worst
       ? `${champImg(r.worst.champion, 16)} ${r.worst.champion} <span class="muted">(z=${fmtSign(r.worst.z)})</span>`
       : '<span class="muted">— all covered —</span>';
@@ -137,9 +139,10 @@ function renderHealthTable(rows, mode, topX) {
 
 function renderRedundancyTable(rd) {
   // Rank champions: best mix at top, most redundant at bottom.
-  // Score = blind_z − closest_other_r  (kept simple; no weight slider here).
+  // Score = -blind_z - closest_other_r. blind_z follows the blog
+  // convention (low z = blindable = good for the pool), so negate.
   const score = rd.rows.map((_, i) =>
-    (rd.blind_z[i] || 0) - (rd.closest_cor[i] || 0)
+    -(rd.blind_z[i] || 0) - (rd.closest_cor[i] || 0)
   );
   const order = score.map((s, i) => [s, i]).sort((a, b) => b[0] - a[0]).map((p) => p[1]);
 
@@ -163,7 +166,7 @@ function renderRedundancyTable(rd) {
 
   const blindCell = (v) => v == null
     ? '<td class="cell-na">—</td>'
-    : `<td style="background:${tealOrangeBg(v)};color:#fff;text-align:center;font-weight:600;border-radius:3px;">${fmtSign(v)}</td>`;
+    : `<td style="background:${tealOrangeBg(-v)};color:#fff;text-align:center;font-weight:600;border-radius:3px;">${fmtSign(v)}</td>`;
 
   const tr = order.map((i, k) => {
     const ch = rd.rows[i];
