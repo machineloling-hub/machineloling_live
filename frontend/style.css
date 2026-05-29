@@ -327,10 +327,43 @@ button { font-family: inherit; }
    so existing event handlers / tests don't break, but hidden visually. */
 .tabs-top { display: none !important; }
 
+/* ── CPD-only sidebar controls ─────────────────────────────────────────── */
+/* Shown only when an active view belongs to the Champion Pool Designer
+   group. Toggle is driven by data-view-group on .app-shell. */
+#cpd-controls { display: none; }
+.app-shell[data-view-group="cpd"] #cpd-controls { display: block; }
+#cpd-controls h1 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 var(--s-3);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── Topbar rank bracket ───────────────────────────────────────────────── */
+.topbar-rank {
+  display: flex; align-items: center; gap: 6px;
+  margin: 0;
+}
+.topbar-rank .field-label {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.topbar-rank .rank-trigger { padding: 4px 8px; font-size: 12px; }
+
 /* ── Welcome champion search ───────────────────────────────────────────── */
+.welcome-wrap {
+  min-height: calc(100vh - var(--topbar-h) - 80px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
 .welcome-search-wrap {
   display: flex; justify-content: center;
-  margin: 0 auto var(--s-5); max-width: 520px;
+  width: 100%; max-width: 560px;
+  margin: 0 auto;
 }
 .welcome-champ-search {
   width: 100%;

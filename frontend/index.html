@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=75">
+<link rel="stylesheet" href="style.css?v=76">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -60,6 +60,20 @@
       <span id="topbar-title-text">Welcome</span>
     </div>
     <div class="topbar-spacer"></div>
+    <div class="field topbar-rank" id="topbar-rank-wrap">
+      <span class="field-label" style="font-size:11px;">Rank</span>
+      <div id="rank-dropdown" class="rank-dropdown">
+        <button id="rank-trigger" type="button" class="rank-trigger"
+                aria-haspopup="listbox" aria-expanded="false"
+                aria-label="Rank bracket">
+          <img class="rank-trigger-icon" alt="">
+          <span class="rank-trigger-label">…</span>
+          <span class="rank-trigger-caret" aria-hidden="true">▾</span>
+        </button>
+        <div id="rank-menu" class="rank-menu" role="listbox" hidden></div>
+      </div>
+      <select id="patch" class="visually-hidden" tabindex="-1" aria-hidden="true"></select>
+    </div>
     <nav class="topbar-links" aria-label="Author links">
       <a href="https://machineloling.com/" target="_blank" rel="noopener noreferrer">machineloling.com</a>
       <span class="sep" aria-hidden="true">·</span>
@@ -89,7 +103,8 @@
       <button type="button" class="nav-item nav-standalone" data-view="meta">Meta Summary</button>
     </nav>
 
-    <h1>Controls</h1>
+    <div id="cpd-controls" class="cpd-only">
+    <h1>Pool Designer</h1>
 
     <div class="field">
       <span class="field-label">Your role</span>
@@ -120,22 +135,6 @@
       <input id="top-x" type="range" min="1" max="8" step="1" value="3">
     </label>
 
-    <div class="field">
-      <span class="field-label">Rank bracket</span>
-      <div id="rank-dropdown" class="rank-dropdown">
-        <button id="rank-trigger" type="button" class="rank-trigger"
-                aria-haspopup="listbox" aria-expanded="false"
-                aria-label="Rank bracket">
-          <img class="rank-trigger-icon" alt="">
-          <span class="rank-trigger-label">…</span>
-          <span class="rank-trigger-caret" aria-hidden="true">▾</span>
-        </button>
-        <div id="rank-menu" class="rank-menu" role="listbox" hidden></div>
-      </div>
-      <select id="patch" class="visually-hidden" tabindex="-1" aria-hidden="true"></select>
-      <span class="hint" style="margin-left:0;"><span id="sidebar-patch-label">Patch …</span> <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="This bracket's pick rates drive PR-weighted scoring and the PR floor. Matchup and synergy Δ values come from a cross-patch D+ dataset (16.1–16.4), so they don't change when you switch brackets — only playrates do.">?</span></span>
-    </div>
-
     <label class="checkbox-label">
       <input id="pr-weighted" type="checkbox" checked>
       <strong>Consider pick rates <span class="info-tip tip-right" tabindex="0" role="button" aria-label="More info" data-tip="Each opponent/partner column is weighted by its solo-queue pick rate, so common matchups count more than rare ones.">?</span></strong>
@@ -144,6 +143,7 @@
     <label>Lowest pickrate considered: <span id="pr-floor-val">0.5%</span>
       <input id="pr-floor" type="range" min="0.1" max="2" step="0.05" value="0.5">
     </label>
+    </div>
 
     <div id="status"></div>
   </aside>
@@ -299,7 +299,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=75"></script>
+<script type="module" src="src/main.js?v=76"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>

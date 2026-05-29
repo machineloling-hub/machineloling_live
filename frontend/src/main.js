@@ -244,6 +244,14 @@ function setActiveView(view) {
   state.view = view;
   $$(".tabs-top .tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
   $$("#app-nav .nav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
+  // Tag the shell so CSS can show/hide pool-designer-specific sidebar
+  // controls. Anything outside this set (welcome, meta) gets no group.
+  const CPD_VIEWS = new Set(["matchup", "synergy", "replacements", "blindability", "health", "builder"]);
+  const shell = document.querySelector(".app-shell");
+  if (shell) {
+    if (CPD_VIEWS.has(view)) shell.setAttribute("data-view-group", "cpd");
+    else shell.removeAttribute("data-view-group");
+  }
   // matchup + synergy share #view-coverage; everything else has its own section
   const isCov = view === "matchup" || view === "synergy";
   const sectionId = isCov ? "view-coverage" : `view-${view}`;
