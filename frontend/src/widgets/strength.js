@@ -1,6 +1,6 @@
 import { state, _sigmaScenarioKey, _sigmasFor, _sigmaBody, _updateSigmasFromCurves } from "../state.js";
-import { apiFetch } from "../api.js";
-import { $, fmtSign, champImg, MATCHUP_COLOR, SYNERGY_COLOR, BLIND_COLOR, STRENGTH_LABEL_COLORS } from "../utils.js";
+import { apiFetch, apiPost } from "../api.js";
+import { $, fmtSign, champImg, MATCHUP_COLOR, SYNERGY_COLOR, BLIND_COLOR, STRENGTH_LABEL_COLORS, setEmptyState } from "../utils.js";
 
 // ──────────────────────────────────────────────────────────────────────────
 // POOL HEALTH TAB
@@ -248,17 +248,14 @@ async function renderPoolStrengthPanel() {
     shrink_alpha: state.shrinkAlpha,
     weights: state.weights,
   });
-  const summary = await apiFetch("/api/pool_summary", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role, pool: state.pool,
-      top_x: state.topX, pr_floor: state.prFloor,
-      pr_weighted: state.prWeighted, patch: state.patch, shrink_alpha: state.shrinkAlpha,
-      w_in_lane: state.weights.in_lane, w_out_lane: state.weights.out_lane,
-      w_synergy: state.weights.synergy, w_blind: state.weights.blind,
-      ..._sigmaBody(summaryScenario),
-    }),
-  }).then((r) => r.json());
+  const summary = await apiPost("/api/pool_summary", {
+    my_role: state.role, pool: state.pool,
+    top_x: state.topX, pr_floor: state.prFloor,
+    pr_weighted: state.prWeighted, patch: state.patch, shrink_alpha: state.shrinkAlpha,
+    w_in_lane: state.weights.in_lane, w_out_lane: state.weights.out_lane,
+    w_synergy: state.weights.synergy, w_blind: state.weights.blind,
+    ..._sigmaBody(summaryScenario),
+  });
   if (summary?.empty || !live) { wrap.innerHTML = ""; return; }
 
   _buildStrengthSkeleton(wrap,
@@ -414,23 +411,19 @@ async function refreshHealth() {
 
   if (state.pool.length === 0) {
     $("#health-strength").innerHTML = "";
-    eqBox.innerHTML = '<div class="empty-msg">Add champions to your pool to see health.</div>';
+    setEmptyState(eqBox, "Add champions to your pool to see health.");
     rt.innerHTML = ""; Plotly.purge(rh); rh.innerHTML = "";
     return;
   }
   // Fire strength panel in parallel — doesn't block the other sections.
   renderPoolStrengthPanel();
 
-  const r = await apiFetch("/api/health", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role, pool: state.pool,
-      top_x: state.topX, pr_floor: state.prFloor,
-      pr_weighted: state.prWeighted, blind_weight: state.blindPenalty,
-      patch: state.patch, shrink_alpha: state.shrinkAlpha,
-    }),
+  const data = await apiPost("/api/health", {
+    my_role: state.role, pool: state.pool,
+    top_x: state.topX, pr_floor: state.prFloor,
+    pr_weighted: state.prWeighted, blind_weight: state.blindPenalty,
+    patch: state.patch, shrink_alpha: state.shrinkAlpha,
   });
-  const data = await r.json();
 
   // Equations
   eqBox.innerHTML = `

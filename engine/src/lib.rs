@@ -20,6 +20,7 @@ mod curves;
 mod data;
 mod endpoints;
 mod ports;
+mod util;
 
 use endpoints::{bans, blind, comparer, compute, health, pool};
 

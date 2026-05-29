@@ -1,5 +1,5 @@
 import { state } from "../state.js";
-import { apiFetch } from "../api.js";
+import { apiPost } from "../api.js";
 import { $, champImg, fmtSign, setStatus, MATCHUP_COLOR, SYNERGY_COLOR } from "../utils.js";
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -139,15 +139,11 @@ async function refreshComparer() {
     return;
   }
   setStatus("computing comparer…");
-  const r = await apiFetch("/api/comparer", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role, champion: state.cmpChampion,
-      pr_floor: state.prFloor, pr_weighted: state.prWeighted,
-      patch: state.patch, shrink_alpha: state.shrinkAlpha,
-    }),
+  const data = await apiPost("/api/comparer", {
+    my_role: state.role, champion: state.cmpChampion,
+    pr_floor: state.prFloor, pr_weighted: state.prWeighted,
+    patch: state.patch, shrink_alpha: state.shrinkAlpha,
   });
-  const data = await r.json();
   setStatus("");
   if (data.empty) {
     $("#cmp-info").textContent = "No data for this champion at this PR floor.";

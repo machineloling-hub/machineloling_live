@@ -23,6 +23,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{DataStore, ROLES};
 use crate::endpoints::blind::{blind_stats, blind_z_lookup};
+use crate::util::defaults;
 use crate::ports::{blend_pair, lane_roles, z_score_columns};
 
 const PERCENTILE_GRID: [u32; 21] = [
@@ -38,11 +39,11 @@ pub struct StrengthCurvesRequest {
     pub patch: Option<String>,
     pub pool_size: usize,
     pub top_x: usize,
-    #[serde(default = "default_pr_floor")]
+    #[serde(default = "defaults::pr_floor_default")]
     pub pr_floor: f32,
     #[serde(default)]
     pub pr_weighted: bool,
-    #[serde(default = "default_alpha")]
+    #[serde(default = "defaults::alpha")]
     pub shrink_alpha: f32,
     #[serde(default)]
     pub extra_pool_size: Option<usize>,
@@ -51,13 +52,6 @@ pub struct StrengthCurvesRequest {
     /// Override sample count; defaults to 500 to match `live_curves.py`.
     #[serde(default)]
     pub n_samples: Option<usize>,
-}
-
-fn default_pr_floor() -> f32 {
-    0.0075
-}
-fn default_alpha() -> f32 {
-    1.0
 }
 
 #[derive(Serialize)]

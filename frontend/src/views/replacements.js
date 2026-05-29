@@ -1,7 +1,7 @@
 import { state, _sigmaScenarioKey, _sigmaBody } from "../state.js";
-import { apiFetch } from "../api.js";
+import { apiPost } from "../api.js";
 import {
-  $, champImg, esc,
+  $, champImg, esc, setEmptyState,
 } from "../utils.js";
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ async function refreshReplacements() {
 
   if (state.pool.length === 0) {
     if (topPicks) topPicks.innerHTML = "";
-    table.innerHTML = '<div class="empty-msg">Add champions to your pool to see candidates.</div>';
+    setEmptyState(table, "Add champions to your pool to see candidates.");
     return;
   }
 
@@ -93,22 +93,19 @@ async function refreshReplacements() {
     top_x: state.topX, pr_floor: state.prFloor, pr_weighted: state.prWeighted,
     shrink_alpha: state.shrinkAlpha,
   });
-  const data = await apiFetch("/api/replacements", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role, pool: state.pool, mode: "add",
-      locked: [], top_x: state.topX,
-      pr_floor: state.prFloor, pr_weighted: state.prWeighted,
-      patch: state.patch, shrink_alpha: state.shrinkAlpha,
-      w_in_lane: state.weights.in_lane, w_out_lane: state.weights.out_lane,
-      w_synergy: state.weights.synergy, w_blind: state.weights.blind,
-      ..._sigmaBody(replScenario),
-    }),
-  }).then((r) => r.json());
+  const data = await apiPost("/api/replacements", {
+    my_role: state.role, pool: state.pool, mode: "add",
+    locked: [], top_x: state.topX,
+    pr_floor: state.prFloor, pr_weighted: state.prWeighted,
+    patch: state.patch, shrink_alpha: state.shrinkAlpha,
+    w_in_lane: state.weights.in_lane, w_out_lane: state.weights.out_lane,
+    w_synergy: state.weights.synergy, w_blind: state.weights.blind,
+    ..._sigmaBody(replScenario),
+  });
 
   if (data.empty || !data.rows.length) {
     if (topPicks) topPicks.innerHTML = "";
-    table.innerHTML = '<div class="empty-msg">No candidates available.</div>';
+    setEmptyState(table, "No candidates available.");
     state.replRanked = null; state.replSelectedCand = null;
     return;
   }

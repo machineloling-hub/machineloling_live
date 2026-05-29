@@ -16,25 +16,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{DataStore, ROLES};
 use crate::ports::blend_pair;
+use crate::util::defaults;
 
 #[derive(Deserialize)]
 pub struct BansRequest {
     pub my_role: String,
     pub pool: Vec<String>,
-    #[serde(default = "default_pr_floor")]
+    #[serde(default = "defaults::pr_floor_default")]
     pub pr_floor: f32,
     #[serde(default)]
     pub pr_weighted: bool,
     #[serde(default)]
     pub patch: Option<String>,
-    #[serde(default = "default_alpha")]
+    #[serde(default = "defaults::alpha")]
     pub shrink_alpha: f32,
-}
-fn default_pr_floor() -> f32 {
-    0.0075
-}
-fn default_alpha() -> f32 {
-    1.0
 }
 
 #[derive(Serialize)]

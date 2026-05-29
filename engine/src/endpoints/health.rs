@@ -15,31 +15,23 @@ use super::blind::blind_stats;
 use super::compute::{coverage, CoverageRequest, MATCHUP_THRESHOLD, SYNERGY_THRESHOLD};
 use super::redundancy::{redundancy, RedundancyPayload};
 use crate::data::{DataStore, ROLES};
+use crate::util::defaults;
+use crate::util::math::{mean_finite_opt, weighted_mean_opt};
 
 #[derive(Deserialize)]
 pub struct HealthRequest {
     pub my_role: String,
     pub pool: Vec<String>,
-    #[serde(default = "default_top_x")]
+    #[serde(default = "defaults::top_x")]
     pub top_x: usize,
-    #[serde(default = "default_pr_floor")]
+    #[serde(default = "defaults::pr_floor_default")]
     pub pr_floor: f32,
     #[serde(default)]
     pub pr_weighted: bool,
     #[serde(default)]
     pub patch: Option<String>,
-    #[serde(default = "default_alpha")]
+    #[serde(default = "defaults::alpha")]
     pub shrink_alpha: f32,
-}
-
-fn default_top_x() -> usize {
-    1
-}
-fn default_pr_floor() -> f32 {
-    0.0075
-}
-fn default_alpha() -> f32 {
-    1.0
 }
 
 #[derive(Serialize)]
@@ -189,9 +181,9 @@ fn build_rows(
             let w_sum: f32 = weights.iter().sum();
             if w_sum > 0.0 {
                 (
-                    weighted_mean(&cov.col_score_z, &weights, w_sum),
-                    weighted_mean(&cov.col_score_pp, &weights, w_sum),
-                    weighted_mean(&cov.col_max_pp, &weights, w_sum),
+                    weighted_mean_opt(&cov.col_score_z, &weights, w_sum),
+                    weighted_mean_opt(&cov.col_score_pp, &weights, w_sum),
+                    weighted_mean_opt(&cov.col_max_pp, &weights, w_sum),
                 )
             } else {
                 (
@@ -255,7 +247,7 @@ fn build_rows(
 pub struct PoolSummaryRequest {
     pub my_role: String,
     pub pool: Vec<String>,
-    #[serde(default = "default_top_x")]
+    #[serde(default = "defaults::top_x")]
     pub top_x: usize,
     #[serde(default = "default_summary_pr_floor")]
     pub pr_floor: f32,
@@ -263,31 +255,28 @@ pub struct PoolSummaryRequest {
     pub pr_weighted: bool,
     #[serde(default)]
     pub patch: Option<String>,
-    #[serde(default = "default_alpha")]
+    #[serde(default = "defaults::alpha")]
     pub shrink_alpha: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub w_in_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub w_out_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub w_synergy: f32,
     #[serde(default = "default_w_blind")]
     pub w_blind: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_in_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_out_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_synergy: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_blind: f32,
 }
 
 fn default_summary_pr_floor() -> f32 {
     0.005
-}
-fn one() -> f32 {
-    1.0
 }
 fn default_w_blind() -> f32 {
     0.2
@@ -441,29 +430,8 @@ fn coverage_topx_z(
             .collect();
         let w_sum: f32 = weights.iter().sum();
         if w_sum > 0.0 {
-            return Some(weighted_mean(&cov.col_score_z, &weights, w_sum));
+            return Some(weighted_mean_opt(&cov.col_score_z, &weights, w_sum));
         }
     }
     Some(mean_finite_opt(&cov.col_score_z))
-}
-
-fn weighted_mean(values: &[Option<f32>], weights: &[f32], w_sum: f32) -> f32 {
-    let s: f32 = values
-        .iter()
-        .zip(weights.iter())
-        .filter_map(|(v, w)| v.and_then(|x| if x.is_finite() { Some(x * w) } else { None }))
-        .sum();
-    s / w_sum
-}
-
-fn mean_finite_opt(values: &[Option<f32>]) -> f32 {
-    let xs: Vec<f32> = values
-        .iter()
-        .filter_map(|v| v.and_then(|x| if x.is_finite() { Some(x) } else { None }))
-        .collect();
-    if xs.is_empty() {
-        f32::NAN
-    } else {
-        xs.iter().sum::<f32>() / xs.len() as f32
-    }
 }

@@ -23,6 +23,7 @@ use serde::Serialize;
 use super::blind::{blind_stats, blind_z_lookup};
 use crate::data::{DataStore, ROLES};
 use crate::ports::{blend_pair, lane_roles};
+use crate::util::math::round3;
 
 #[derive(Serialize, Clone)]
 pub struct DendroSegment {
@@ -457,9 +458,6 @@ fn dendro_segments(linkage: &[[f32; 4]], leaves_order: &[usize]) -> Vec<DendroSe
     segments
 }
 
-fn round3(v: f32) -> f32 {
-    (v * 1000.0).round() / 1000.0
-}
 fn round_vec_opt(v: &[f32]) -> Vec<Option<f32>> {
     v.iter()
         .map(|&x| if x.is_finite() { Some(round3(x)) } else { None })

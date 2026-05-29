@@ -155,6 +155,16 @@ function infoTip(tip, pos = "center") {
   return `<span class="info-tip${cls}" tabindex="0" role="button" aria-label="More info" data-tip="${safe}">?</span>`;
 }
 
+// Render the standard "empty state" message inside `el`. Pass `purge:true`
+// when `el` may host a Plotly chart so the chart's internal DOM is torn
+// down before the placeholder HTML replaces it (otherwise Plotly leaks
+// listeners and may re-draw on top of the message).
+function setEmptyState(el, msg, { purge = false } = {}) {
+  if (!el) return;
+  if (purge && typeof Plotly !== "undefined") Plotly.purge(el);
+  el.innerHTML = `<div class="empty-msg">${esc(msg)}</div>`;
+}
+
 export {
   ROLES, CDRAGON_NAME_FIX, ROLE_ICON_URL,
   esc, champSlug, champIconUrl, champImg,
@@ -166,4 +176,5 @@ export {
   PLOTLY_THEME, PLOTLY_AXIS,
   $, $$, setStatus,
   infoTip,
+  setEmptyState,
 };

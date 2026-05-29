@@ -13,6 +13,8 @@ use serde::{Deserialize, Serialize};
 use super::blind::{blind_stats, blind_z_lookup};
 use crate::data::DataStore;
 use crate::ports::{pool_stats, total_score_from_stats, z_matrices, PoolStats};
+use crate::util::consts;
+use crate::util::defaults;
 
 const POOL_BUILDER_CAP: u64 = 10_000;
 
@@ -26,31 +28,31 @@ pub struct ReplacementsRequest {
     pub mode: String,
     #[serde(default)]
     pub locked: Vec<String>,
-    #[serde(default = "default_top_x")]
+    #[serde(default = "defaults::top_x")]
     pub top_x: usize,
-    #[serde(default = "default_pr_floor")]
+    #[serde(default = "defaults::pr_floor_default")]
     pub pr_floor: f32,
     #[serde(default)]
     pub pr_weighted: bool,
     #[serde(default)]
     pub patch: Option<String>,
-    #[serde(default = "default_alpha")]
+    #[serde(default = "defaults::alpha")]
     pub shrink_alpha: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub w_in_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub w_out_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub w_synergy: f32,
     #[serde(default = "default_w_blind")]
     pub w_blind: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_in_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_out_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_synergy: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_blind: f32,
     /// Optional per-component σs for the post-add pool (size N+1). When
     /// missing or in `replace` mode, falls back to base σs.
@@ -64,18 +66,6 @@ pub struct ReplacementsRequest {
     pub new_sigma_blind: Option<f32>,
 }
 
-fn default_top_x() -> usize {
-    1
-}
-fn default_pr_floor() -> f32 {
-    0.0075
-}
-fn default_alpha() -> f32 {
-    1.0
-}
-fn one() -> f32 {
-    1.0
-}
 fn default_w_blind() -> f32 {
     0.3
 }
@@ -412,7 +402,7 @@ fn replacement_candidates(store: &DataStore, my_role: &str, pool: &[String]) -> 
     let pool_set: HashSet<&str> = pool.iter().map(|s| s.as_str()).collect();
     let mut champs: Vec<(String, f32)> = pr_my
         .iter()
-        .filter(|(ch, &pr)| pr >= 0.005 && !pool_set.contains(ch.as_str()))
+        .filter(|(ch, &pr)| pr >= consts::PR_FLOOR_REPLACEMENTS && !pool_set.contains(ch.as_str()))
         .map(|(ch, &pr)| (ch.clone(), pr))
         .collect();
     champs.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
@@ -430,31 +420,31 @@ pub struct BuildRequest {
     pub maybe: Vec<String>,
     #[serde(default = "default_target")]
     pub target: usize,
-    #[serde(default = "default_top_x")]
+    #[serde(default = "defaults::top_x")]
     pub top_x: usize,
-    #[serde(default = "default_pr_floor")]
+    #[serde(default = "defaults::pr_floor_default")]
     pub pr_floor: f32,
     #[serde(default)]
     pub pr_weighted: bool,
     #[serde(default)]
     pub patch: Option<String>,
-    #[serde(default = "default_alpha")]
+    #[serde(default = "defaults::alpha")]
     pub shrink_alpha: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub w_in_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub w_out_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub w_synergy: f32,
     #[serde(default = "default_w_blind")]
     pub w_blind: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_in_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_out_lane: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_synergy: f32,
-    #[serde(default = "one")]
+    #[serde(default = "defaults::one_f32")]
     pub sigma_blind: f32,
 }
 

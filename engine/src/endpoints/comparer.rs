@@ -18,26 +18,21 @@ use serde::{Deserialize, Serialize};
 use super::blind::{blind_stats, blind_z_lookup};
 use crate::data::{DataStore, ROLES};
 use crate::ports::z_matrices;
+use crate::util::defaults;
+use crate::util::math::{round1, round2_f64, round3, round3_opt};
 
 #[derive(Deserialize)]
 pub struct ComparerRequest {
     pub my_role: String,
     pub champion: String,
-    #[serde(default = "default_pr_floor")]
+    #[serde(default = "defaults::pr_floor_comparer")]
     pub pr_floor: f32,
     #[serde(default)]
     pub pr_weighted: bool,
     #[serde(default)]
     pub patch: Option<String>,
-    #[serde(default = "default_alpha")]
+    #[serde(default = "defaults::alpha")]
     pub shrink_alpha: f32,
-}
-
-fn default_pr_floor() -> f32 {
-    0.01
-}
-fn default_alpha() -> f32 {
-    1.0
 }
 
 #[derive(Serialize)]
@@ -338,23 +333,6 @@ pub fn champion_correlation(
 
 fn static_role_str(s: &'static str) -> &'static str {
     s
-}
-
-fn round1(v: f32) -> f32 {
-    (v * 10.0).round() / 10.0
-}
-fn round2_f64(v: f64) -> f64 {
-    (v * 100.0).round() / 100.0
-}
-fn round3(v: f32) -> f32 {
-    (v * 1000.0).round() / 1000.0
-}
-fn round3_opt(v: f32) -> Option<f32> {
-    if v.is_finite() {
-        Some(round3(v))
-    } else {
-        None
-    }
 }
 
 fn hstack(slabs: &[&Array2<f32>], n_rows: usize) -> Array2<f32> {

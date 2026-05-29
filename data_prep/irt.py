@@ -31,9 +31,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
-from aggregate_matches import (_is_blue, _norm_champ,
-                                _participant_tier_bucket, _team_won)
+from aggregate_matches import _is_blue, _norm_champ, _participant_tier_bucket
 from refresh_config import RIOT_LANE_TO_ROLE, RefreshConfig
 
 # L2 regularisation strength. C=1.0 / λ=1.0 on log-odds with ~roles*champs
@@ -131,9 +129,13 @@ def fit_theta(cfg: RefreshConfig, feather_paths: list[Path]) -> pd.DataFrame:
     for r, (blue, red, y) in enumerate(rosters):
         y_arr[r] = y
         for k in blue:
-            row_ind.append(r); col_ind.append(col_idx[k]); data.append(1)
+            row_ind.append(r)
+            col_ind.append(col_idx[k])
+            data.append(1)
         for k in red:
-            row_ind.append(r); col_ind.append(col_idx[k]); data.append(-1)
+            row_ind.append(r)
+            col_ind.append(col_idx[k])
+            data.append(-1)
     X = sparse.csr_matrix(
         (np.array(data, dtype=np.float32),
          (np.array(row_ind, dtype=np.int32),

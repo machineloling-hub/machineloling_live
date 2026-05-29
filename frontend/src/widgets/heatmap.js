@@ -1,6 +1,6 @@
 import { state } from "../state.js";
-import { apiFetch } from "../api.js";
-import { $, ROLES, esc, champIconUrl, plotlyColorscale, colorAt } from "../utils.js";
+import { apiPost } from "../api.js";
+import { $, ROLES, esc, champIconUrl, plotlyColorscale, colorAt, setEmptyState } from "../utils.js";
 
 function drawPoolHeatmap(div, opts) {
   const {
@@ -415,23 +415,18 @@ function populateViewSelect(selectEl, myRole, currentValue, preferredDefault = n
 
 async function fetchPoolCoverageFor(pool, view, extraRows = []) {
   const [mode, pos] = view.split("_");
-  const r = await apiFetch("/api/coverage", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role, other_role: pos, mode,
-      pool, top_x: state.topX, pr_floor: state.prFloor,
-      pr_weighted: state.prWeighted, patch: state.patch, shrink_alpha: state.shrinkAlpha,
-      extra_rows: extraRows,
-    }),
+  return apiPost("/api/coverage", {
+    my_role: state.role, other_role: pos, mode,
+    pool, top_x: state.topX, pr_floor: state.prFloor,
+    pr_weighted: state.prWeighted, patch: state.patch, shrink_alpha: state.shrinkAlpha,
+    extra_rows: extraRows,
   });
-  return await r.json();
 }
 
 async function renderPoolPreview(divId, pool, view, extra = {}) {
   const div = $(divId);
   if (!pool || pool.length === 0) {
-    Plotly.purge(div);
-    div.innerHTML = '<div class="empty-msg">No pool selected.</div>';
+    setEmptyState(div, "No pool selected.", { purge: true });
     return;
   }
   const cov = await fetchPoolCoverageFor(pool, view, extra.extraRows || []);

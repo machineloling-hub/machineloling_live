@@ -35,9 +35,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
-from refresh_config import (RIOT_LANE_TO_ROLE, ROLES, RefreshConfig,
-                            TIER_TO_BUCKET)
+from refresh_config import RIOT_LANE_TO_ROLE, ROLES, TIER_TO_BUCKET, RefreshConfig
 
 # Order matters for synergy file naming (matches existing _data/ filenames).
 _ROLE_ORDER = {r: i for i, r in enumerate(ROLES)}
@@ -421,7 +419,9 @@ def aggregate_tier(cfg: RefreshConfig, feather_paths: list[Path]) -> dict[str, p
         m, t, d = _count_feather_rows(
             cfg, df, matchup_counts, synergy_counts, ind_counts, pr_counts,
             ind_full_counts)
-        n_matches += m; n_in_tier += t; n_dup += d
+        n_matches += m
+        n_in_tier += t
+        n_dup += d
 
     print(f"[aggregate] {n_matches} matches scanned, {n_in_tier} contributed to tier={cfg.tier}"
           + (f", {n_dup} skipped (duplicate role on a team)" if n_dup else ""))

@@ -7,11 +7,11 @@
 //       /api/pool_strength_curves + /api/pool_summary  (via renderPoolStrengthPanel).
 
 import { state } from "../state.js";
-import { apiFetch } from "../api.js";
+import { apiPost } from "../api.js";
 import {
   $, fmtSign, champImg, champIconUrl, plotlyColorscale,
   MATCHUP_COLOR, SYNERGY_COLOR, BLIND_COLOR,
-  tealOrangeBg, corrBg,
+  tealOrangeBg, corrBg, setEmptyState,
 } from "../utils.js";
 import { renderPoolStrengthPanel } from "../widgets/strength.js";
 
@@ -26,7 +26,7 @@ async function refreshHealth() {
   if (state.pool.length === 0) {
     summaryHead.innerHTML = "";
     strengthDiv.innerHTML = "";
-    matchupDiv.innerHTML  = '<div class="empty-msg">Add champions to your pool to see health.</div>';
+    setEmptyState(matchupDiv, "Add champions to your pool to see health.");
     synergyDiv.innerHTML  = "";
     redTable.innerHTML    = "";
     Plotly.purge(redHm); redHm.innerHTML = "";
@@ -36,18 +36,14 @@ async function refreshHealth() {
   // Strength panel runs independently (its own data fetch + render).
   renderPoolStrengthPanel();
 
-  const r = await apiFetch("/api/health", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role, pool: state.pool,
-      top_x: state.topX, pr_floor: state.prFloor,
-      pr_weighted: state.prWeighted,
-      patch: state.patch, shrink_alpha: state.shrinkAlpha,
-    }),
+  const data = await apiPost("/api/health", {
+    my_role: state.role, pool: state.pool,
+    top_x: state.topX, pr_floor: state.prFloor,
+    pr_weighted: state.prWeighted,
+    patch: state.patch, shrink_alpha: state.shrinkAlpha,
   });
-  const data = await r.json();
   if (data?.empty) {
-    matchupDiv.innerHTML = '<div class="empty-msg">No health data for this pool.</div>';
+    setEmptyState(matchupDiv, "No health data for this pool.");
     synergyDiv.innerHTML = "";
     redTable.innerHTML = "";
     Plotly.purge(redHm); redHm.innerHTML = "";
@@ -78,7 +74,7 @@ async function refreshHealth() {
   synergyDiv.innerHTML = renderHealthTable(data.synergy_rows, "synergy", data.top_x);
 
   if (!data.redundancy) {
-    redTable.innerHTML = '<div class="empty-msg">Need at least 2 champions in your pool for redundancy.</div>';
+    setEmptyState(redTable, "Need at least 2 champions in your pool for redundancy.");
     Plotly.purge(redHm); redHm.innerHTML = "";
     return;
   }

@@ -1,6 +1,6 @@
 import { state } from "../state.js";
-import { apiFetch } from "../api.js";
-import { $, ROLES, champImg, fmtSign, tealOrangeBg } from "../utils.js";
+import { apiPost } from "../api.js";
+import { $, ROLES, champImg, fmtSign, tealOrangeBg, setEmptyState } from "../utils.js";
 
 // ──────────────────────────────────────────────────────────────────────────
 // BAN RECOMMENDER TAB
@@ -12,7 +12,7 @@ async function refreshBans() {
 
   if (state.pool.length === 0) {
     eq.innerHTML = ""; top.innerHTML = "";
-    grid.innerHTML = '<div class="empty-msg">Add champions to your pool to see ban recommendations.</div>';
+    grid.innerHTML = ""; setEmptyState(grid, "Add champions to your pool to see ban recommendations.");
     return;
   }
 
@@ -33,17 +33,13 @@ async function refreshBans() {
   </div>`;
   eq.innerHTML = `<div>${wmark}</div><div class="plain">${plain}</div>${legend}`;
 
-  const r = await apiFetch("/api/bans", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role, pool: state.pool,
-      pr_floor: state.prFloor, pr_weighted: state.prWeighted,
-      patch: state.patch, shrink_alpha: state.shrinkAlpha,
-    }),
+  const data = await apiPost("/api/bans", {
+    my_role: state.role, pool: state.pool,
+    pr_floor: state.prFloor, pr_weighted: state.prWeighted,
+    patch: state.patch, shrink_alpha: state.shrinkAlpha,
   });
-  const data = await r.json();
   if (data.empty) {
-    top.innerHTML = ""; grid.innerHTML = '<div class="empty-msg">No ban candidates.</div>';
+    top.innerHTML = ""; setEmptyState(grid, "No ban candidates.");
     return;
   }
 

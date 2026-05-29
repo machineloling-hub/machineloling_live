@@ -15,27 +15,22 @@ use std::collections::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 
 use crate::data::{DataStore, ROLES};
+use crate::util::defaults;
+use crate::util::math::{mean_finite, mean_or_none};
 
 #[derive(Deserialize)]
 pub struct BlindabilityRequest {
     pub my_role: String,
     #[serde(default)]
     pub pool: Vec<String>,
-    #[serde(default = "default_pr_floor")]
+    #[serde(default = "defaults::pr_floor_blind")]
     pub pr_floor: f32,
     #[serde(default)]
     pub pr_weighted: bool,
     #[serde(default)]
     pub patch: Option<String>,
-    #[serde(default = "default_alpha")]
+    #[serde(default = "defaults::alpha")]
     pub shrink_alpha: f32,
-}
-
-fn default_pr_floor() -> f32 {
-    0.005
-}
-fn default_alpha() -> f32 {
-    1.0
 }
 
 #[derive(Serialize)]
@@ -381,21 +376,4 @@ fn unbiased_sd(x: &[f32]) -> f32 {
     let var: f32 =
         valid.iter().map(|&v| (v - m).powi(2)).sum::<f32>() / (valid.len() - 1) as f32;
     var.sqrt()
-}
-
-fn mean_finite(x: &[f32]) -> f32 {
-    let v: Vec<f32> = x.iter().copied().filter(|v| v.is_finite()).collect();
-    if v.is_empty() {
-        f32::NAN
-    } else {
-        v.iter().sum::<f32>() / v.len() as f32
-    }
-}
-
-fn mean_or_none(x: &[f32]) -> Option<f32> {
-    if x.is_empty() {
-        None
-    } else {
-        Some(x.iter().sum::<f32>() / x.len() as f32)
-    }
 }

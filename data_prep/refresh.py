@@ -45,13 +45,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "data_prep"))
 sys.path.insert(0, str(ROOT / "_reference_backend"))
 
+import irt  # noqa: E402
+import s3_io  # noqa: E402
 from aggregate_matches import write_aggregates  # noqa: E402
 from incremental import aggregate_incremental  # noqa: E402
-import irt  # noqa: E402
 from refresh_config import RefreshConfig  # noqa: E402
-from shrinkage import (add_eb_columns, add_hier_columns,  # noqa: E402
-                        tau_sidecar_rows)
-import s3_io  # noqa: E402
+from shrinkage import add_eb_columns, add_hier_columns, tau_sidecar_rows  # noqa: E402
 
 STAGING_DIR = ROOT / "dist" / "staged"
 

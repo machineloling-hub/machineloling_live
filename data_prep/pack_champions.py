@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "_reference_backend"))
-from data import load_all, ROLES  # noqa: E402
+from data import ROLES, load_all  # noqa: E402
 
 DATA_DIR = Path(os.environ.get("POOL_DESIGNER_DATA_DIR",
                                str(ROOT / "_data")))
@@ -140,7 +140,7 @@ def main() -> None:
         sub = store.ind_wr[store.ind_wr["role"] == role]
         out["default"][role] = [
             {"champion": str(c), "pick_rate": float(p), "win_rate": float(w)}
-            for c, p, w in zip(sub["champion"], sub["pick_rate"], sub["win_rate"])
+            for c, p, w in zip(sub["champion"], sub["pick_rate"], sub["win_rate"], strict=True)
         ]
 
     # Per-rank — uses lolalytics PR table for ranking, ind_wr for WR. We also

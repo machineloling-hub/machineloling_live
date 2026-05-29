@@ -1,6 +1,6 @@
 import { state } from "../state.js";
 import { getChampionsData } from "../api.js";
-import { ROLES, RANK_LABELS, RANK_COLORS, ROLE_ICON_URL, champSlug } from "../utils.js";
+import { ROLES, RANK_LABELS, RANK_COLORS, ROLE_ICON_URL, champSlug, esc } from "../utils.js";
 
 // ──────────────────────────────────────────────────────────────────────────
 // PLAYRATE BY RANK — single big chart per role with Sankey-style ribbons.
@@ -26,10 +26,6 @@ function _champColor(name) {
 
 function _champIconURL(name) {
   return `https://cdn.communitydragon.org/latest/champion/${champSlug(name)}/square`;
-}
-
-function _escape(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 }
 
 function _slice(rank, role) {
@@ -196,7 +192,7 @@ function refreshMeta() {
       const cx = (xA + xB) / 2;
       const path = `M${xA},${yA0} C${cx},${yA0} ${cx},${yB0} ${xB},${yB0}` +
                    ` L${xB},${yB1} C${cx},${yB1} ${cx},${yA1} ${xA},${yA1} Z`;
-      svg += `<path class="ribbon" data-champ="${_escape(champ)}" d="${path}" fill="${_champColor(champ)}"/>`;
+      svg += `<path class="ribbon" data-champ="${esc(champ)}" d="${path}" fill="${_champColor(champ)}"/>`;
     }
   }
 
@@ -215,7 +211,7 @@ function refreshMeta() {
       const pct = ((c.rawShare ?? c.share) * 100).toFixed(2);
 
       const interp = c._interpolated ? ' data-interpolated="1"' : '';
-      svg += `<g class="seg" data-champ="${_escape(c.champion)}" data-pct="${pct}" data-games="${c.games}" data-rank="${RANK_LABELS[r.rank] || r.rank}"${interp}>`;
+      svg += `<g class="seg" data-champ="${esc(c.champion)}" data-pct="${pct}" data-games="${c.games}" data-rank="${RANK_LABELS[r.rank] || r.rank}"${interp}>`;
       svg += `<rect x="${x0}" y="${yA}" width="${barW}" height="${segH}" fill="${color}" stroke="rgba(0,0,0,0.18)" stroke-width="0.4"/>`;
       if (segH >= 14) {
         const iconSize = Math.min(segH - 2, 30);
@@ -300,7 +296,7 @@ function refreshMeta() {
     const iconMidY = item.iconY + iconSize / 2;
     const cx = (item.segRightX + iconX) / 2;
     const path = `M${item.segRightX},${item.segMidY} C${cx},${item.segMidY} ${cx},${iconMidY} ${iconX},${iconMidY}`;
-    svg += `<g class="leader" data-champ="${_escape(item.champ)}">`;
+    svg += `<g class="leader" data-champ="${esc(item.champ)}">`;
     svg += `<path d="${path}" stroke="${color}" stroke-width="1.6" fill="none" opacity="0.9"/>`;
     svg += `<image x="${iconX}" y="${item.iconY}" width="${iconSize}" height="${iconSize}" href="${_champIconURL(item.champ)}" preserveAspectRatio="xMidYMid slice"/>`;
     svg += `<rect x="${iconX}" y="${item.iconY}" width="${iconSize}" height="${iconSize}" fill="none" stroke="${color}" stroke-width="1.5" rx="3"/>`;
@@ -333,8 +329,8 @@ function refreshMeta() {
     <div class="meta-champ-grid">`;
   for (const { champ, peak } of champList) {
     const isSel = sel.has(champ);
-    grid += `<div class="meta-champ-tile ${isSel ? "selected" : ""}" data-tile-champ="${_escape(champ)}" title="${_escape(champ)} — peak ${(peak * 100).toFixed(2)}%">`;
-    grid += `<img src="${_champIconURL(champ)}" alt="${_escape(champ)}" onerror="this.style.opacity='0';">`;
+    grid += `<div class="meta-champ-tile ${isSel ? "selected" : ""}" data-tile-champ="${esc(champ)}" title="${esc(champ)} — peak ${(peak * 100).toFixed(2)}%">`;
+    grid += `<img src="${_champIconURL(champ)}" alt="${esc(champ)}" onerror="this.style.opacity='0';">`;
     grid += `</div>`;
   }
   grid += `</div></div>`;
@@ -350,7 +346,7 @@ function refreshMeta() {
       .map((i) => {
         const rl = RANK_LABELS[i.rank] || i.rank;
         const nbrs = i.neighbors.map(n => `${RANK_LABELS[n.rank] || n.rank} ${(n.share * 100).toFixed(2)}%`).join(", ");
-        return `<li><b>${_escape(i.champ)}</b> in ${rl}: filled ${(i.share * 100).toFixed(2)}% (avg of ${nbrs})</li>`;
+        return `<li><b>${esc(i.champ)}</b> in ${rl}: filled ${(i.share * 100).toFixed(2)}% (avg of ${nbrs})</li>`;
       })
       .join("");
     interpFooter = `<details class="meta-interp-footer" style="margin:14px 0 4px 0;color:#aaa;font-size:13px;">
@@ -416,13 +412,13 @@ function refreshMeta() {
       const rank = target.dataset.rank;
       tooltip.innerHTML =
         `<img src="${_champIconURL(champ)}" alt="" onerror="this.style.display='none'">` +
-        `<div><div class="name">${_escape(champ)}</div>` +
+        `<div><div class="name">${esc(champ)}</div>` +
         `<div class="meta">${pct}% · ${games} games · ${rank}</div></div>`;
     } else {
       // ribbon — show just champ icon + name (segments on either side carry detail)
       tooltip.innerHTML =
         `<img src="${_champIconURL(champ)}" alt="" onerror="this.style.display='none'">` +
-        `<div><div class="name">${_escape(champ)}</div></div>`;
+        `<div><div class="name">${esc(champ)}</div></div>`;
     }
     tooltip.style.display = "flex";
     _positionMetaTooltip(e, tooltip);

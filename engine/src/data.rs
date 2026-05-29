@@ -22,7 +22,6 @@ pub struct PairMatsIndex {
 
 #[derive(Deserialize)]
 pub struct Index {
-    pub champions: HashMap<String, Vec<String>>,
     pub matchup: HashMap<String, HashMap<String, PairMatsIndex>>,
     pub synergy: HashMap<String, HashMap<String, PairMatsIndex>>,
 }
@@ -48,17 +47,11 @@ pub struct PairMats {
     pub cols: Vec<String>,
     pub shrunk: Array2<f32>,
     pub raw: Array2<f32>,
-    #[allow(dead_code)]
-    pub tau_rows: Vec<f32>,
-    #[allow(dead_code)]
-    pub tau_cols: Vec<f32>,
 }
 
 pub struct DataStore {
     pub matchup: HashMap<String, HashMap<String, PairMats>>,
     pub synergy: HashMap<String, HashMap<String, PairMats>>,
-    #[allow(dead_code)]
-    pub valid_champs: HashMap<String, Vec<String>>,
     /// Cross-patch overall pick-rate, from `individual_wr.csv`.
     pub pr_by_role: HashMap<String, HashMap<String, f32>>,
     /// Per-patch pick-rate from lolalytics. Keyed patch → role → champ.
@@ -131,7 +124,6 @@ impl DataStore {
         Ok(DataStore {
             matchup,
             synergy,
-            valid_champs: index.champions,
             pr_by_role,
             pr_by_patch,
             wr_by_role,
@@ -196,15 +188,17 @@ fn decode_pair(bin: &[u8], pi: &PairMatsIndex) -> Result<PairMats, String> {
     let shrunk_end = shrunk_start.checked_add(cells_bytes).ok_or_else(bound)?;
     let raw_start = shrunk_end;
     let raw_end = raw_start.checked_add(cells_bytes).ok_or_else(bound)?;
-    let tau_r_start = raw_end;
-    let tau_r_end = tau_r_start.checked_add(row_bytes).ok_or_else(bound)?;
-    let tau_c_start = tau_r_end;
-    let tau_c_end = tau_c_start.checked_add(col_bytes).ok_or_else(bound)?;
+    // tau_rows / tau_cols are present in the blob but unused by the engine;
+    // we still validate the buffer is large enough for them.
+    let tau_end = raw_end
+        .checked_add(row_bytes)
+        .and_then(|v| v.checked_add(col_bytes))
+        .ok_or_else(bound)?;
 
-    if tau_c_end > bin.len() {
+    if tau_end > bin.len() {
         return Err(format!(
             "matrices.bin: pair extends past end of buffer (need {}, have {})",
-            tau_c_end,
+            tau_end,
             bin.len()
         ));
     }
@@ -214,8 +208,6 @@ fn decode_pair(bin: &[u8], pi: &PairMatsIndex) -> Result<PairMats, String> {
         cols: pi.cols.clone(),
         shrunk: decode_array2(&bin[shrunk_start..shrunk_end], pi.rows_n, pi.cols_n)?,
         raw: decode_array2(&bin[raw_start..raw_end], pi.rows_n, pi.cols_n)?,
-        tau_rows: decode_vec(&bin[tau_r_start..tau_r_end]),
-        tau_cols: decode_vec(&bin[tau_c_start..tau_c_end]),
     })
 }
 
@@ -234,11 +226,4 @@ fn decode_array2(bytes: &[u8], rows: usize, cols: usize) -> Result<Array2<f32>, 
         data.push(f32::from(f16::from_bits(bits)));
     }
     Array2::from_shape_vec((rows, cols), data).map_err(|e| e.to_string())
-}
-
-fn decode_vec(bytes: &[u8]) -> Vec<f32> {
-    bytes
-        .chunks_exact(2)
-        .map(|c| f32::from(f16::from_bits(u16::from_le_bytes([c[0], c[1]]))))
-        .collect()
 }

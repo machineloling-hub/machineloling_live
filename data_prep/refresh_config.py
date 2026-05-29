@@ -93,7 +93,7 @@ class RefreshConfig:
     version: str
 
     @classmethod
-    def from_env(cls) -> "RefreshConfig":
+    def from_env(cls) -> RefreshConfig:
         tier = _require("REFRESH_TIER")
         if tier not in TIERS:
             raise SystemExit(f"REFRESH_TIER={tier!r} not in {TIERS}")
@@ -118,7 +118,7 @@ class RefreshConfig:
             hmc_chains=_pos_int("REFRESH_HMC_CHAINS", 2),
             version=os.environ.get(
                 "REFRESH_VERSION",
-                _dt.datetime.now(_dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ"),
+                _dt.datetime.now(_dt.UTC).strftime("%Y%m%dT%H%M%SZ"),
             ),
         )
 
@@ -148,7 +148,7 @@ def _pos_int(name: str, default: int) -> int:
     try:
         v = int(raw)
     except ValueError:
-        raise SystemExit(f"{name}={raw!r} not an integer")
+        raise SystemExit(f"{name}={raw!r} not an integer") from None
     if v <= 0:
         raise SystemExit(f"{name}={v} must be > 0")
     return v
@@ -161,7 +161,7 @@ def _pos_float(name: str, default: float) -> float:
     try:
         v = float(raw)
     except ValueError:
-        raise SystemExit(f"{name}={raw!r} not a float")
+        raise SystemExit(f"{name}={raw!r} not a float") from None
     if v < 0:
         raise SystemExit(f"{name}={v} must be >= 0")
     return v

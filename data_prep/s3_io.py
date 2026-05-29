@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import datetime as _dt
 import json as _json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from refresh_config import RefreshConfig
 
@@ -381,14 +381,14 @@ def update_manifest(cfg: RefreshConfig, refresh_kind: str = "full") -> dict:
         # Don't silently lose other tiers if the manifest is unreadable —
         # surface it so the operator can investigate before the write
         # overwrites real data with a fresh-empty one.
-        raise RuntimeError(f"failed to read existing manifest at s3://{cfg.s3_bucket}/{key}: {e}")
+        raise RuntimeError(f"failed to read existing manifest at s3://{cfg.s3_bucket}/{key}: {e}") from e
 
     manifest["tiers"][cfg.tier] = {
         "version": cfg.version,
         "refresh_kind": refresh_kind,
     }
     manifest["generated_at"] = _dt.datetime.now(
-        _dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        _dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     body = _json.dumps(manifest, indent=2, sort_keys=True).encode("utf-8")
     s3.put_object(

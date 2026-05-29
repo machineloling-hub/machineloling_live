@@ -1,8 +1,9 @@
 import { state, _sigmaScenarioKey, _sigmaBody } from "../state.js";
-import { apiFetch } from "../api.js";
+import { apiFetch, apiPost } from "../api.js";
 import {
   $, champImg, champIconUrl, fmtSign, tealOrangeBg,
   MATCHUP_COLOR, SYNERGY_COLOR, BLIND_COLOR, TOTAL_COLOR, renderScoreEquation,
+  setEmptyState,
 } from "../utils.js";
 import {
   fetchLiveStrengthCurves, _slotFromLive,
@@ -56,27 +57,23 @@ async function refreshComboCount() {
 
 async function buildPools() {
   $("#pb-build").disabled = true;
-  $("#pb-result-table").innerHTML = '<div class="empty-msg">Scoring combinations…</div>';
+  setEmptyState($("#pb-result-table"), "Scoring combinations…");
   $("#pb-selected-summary").innerHTML = "";
   const buildScenario = _sigmaScenarioKey({
     role: state.role, patch: state.patch, pool_size: state.pbTarget,
     top_x: state.topX, pr_floor: state.prFloor, pr_weighted: state.prWeighted,
     shrink_alpha: state.shrinkAlpha,
   });
-  const r = await apiFetch("/api/build", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role,
-      definite: state.pbDefinite, maybe: state.pbMaybe, target: state.pbTarget,
-      top_x: state.topX,
-      w_in_lane: state.weights.in_lane, w_out_lane: state.weights.out_lane,
-      w_synergy: state.weights.synergy, w_blind: state.weights.blind,
-      ..._sigmaBody(buildScenario),
-      pr_floor: state.prFloor, pr_weighted: state.prWeighted,
-      patch: state.patch, shrink_alpha: state.shrinkAlpha,
-    }),
+  const data = await apiPost("/api/build", {
+    my_role: state.role,
+    definite: state.pbDefinite, maybe: state.pbMaybe, target: state.pbTarget,
+    top_x: state.topX,
+    w_in_lane: state.weights.in_lane, w_out_lane: state.weights.out_lane,
+    w_synergy: state.weights.synergy, w_blind: state.weights.blind,
+    ..._sigmaBody(buildScenario),
+    pr_floor: state.prFloor, pr_weighted: state.prWeighted,
+    patch: state.patch, shrink_alpha: state.shrinkAlpha,
   });
-  const data = await r.json();
   $("#pb-build").disabled = false;
   if (data.error) {
     $("#pb-result-table").innerHTML = `<div style="color:#D55E00;">${data.error}</div>`;
@@ -92,15 +89,14 @@ async function renderBuilderResults() {
   state.pbView = populateViewSelect($("#pb-view"), state.role, state.pbView, `matchup_${state.role}`);
 
   if (!state.pbBuiltRows) {
-    div.innerHTML = '<div class="empty-msg">Configure Definite + Maybe and click Build pools.</div>';
+    setEmptyState(div, "Configure Definite + Maybe and click Build pools.");
     $("#pb-selected-summary").innerHTML = "";
     $("#pb-strength").innerHTML = "";
-    Plotly.purge($("#pb-selected-hm"));
-    $("#pb-selected-hm").innerHTML = '<div class="empty-msg">Build pools first to preview a coverage heatmap.</div>';
+    setEmptyState($("#pb-selected-hm"), "Build pools first to preview a coverage heatmap.", { purge: true });
     return;
   }
   if (state.pbBuiltRows.length === 0) {
-    div.innerHTML = '<div class="empty-msg">No valid pools.</div>';
+    setEmptyState(div, "No valid pools.");
     $("#pb-strength").innerHTML = "";
     return;
   }
@@ -205,8 +201,7 @@ async function renderBuilderResults() {
       ↓ Click a row in the ranked-pools table to see its coverage on the heatmap.
     </div>`;
     $("#pb-strength").innerHTML = "";
-    Plotly.purge($("#pb-selected-hm"));
-    $("#pb-selected-hm").innerHTML = '<div class="empty-msg">Click a pool row below to display its heatmap.</div>';
+    setEmptyState($("#pb-selected-hm"), "Click a pool row below to display its heatmap.", { purge: true });
   }
 }
 

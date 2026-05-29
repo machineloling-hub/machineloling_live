@@ -1,6 +1,6 @@
 import { state } from "../state.js";
-import { apiFetch } from "../api.js";
-import { $, ROLES, ROLE_ICON_URL, esc, fmtSign, champImg, setStatus } from "../utils.js";
+import { apiPost } from "../api.js";
+import { $, ROLES, ROLE_ICON_URL, esc, fmtSign, champImg, setStatus, setEmptyState } from "../utils.js";
 import { drawPoolHeatmap } from "../widgets/heatmap.js";
 
 
@@ -118,24 +118,19 @@ function filterChips(cov) {
 
 async function fetchCoverage() {
   if (state.pool.length === 0) return { empty: true };
-  const r = await apiFetch("/api/coverage", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role, other_role: state.otherRole,
-      mode: state.view, pool: state.pool,
-      top_x: state.topX, pr_floor: state.prFloor, pr_weighted: state.prWeighted,
-      patch: state.patch, shrink_alpha: state.shrinkAlpha,
-    }),
+  return apiPost("/api/coverage", {
+    my_role: state.role, other_role: state.otherRole,
+    mode: state.view, pool: state.pool,
+    top_x: state.topX, pr_floor: state.prFloor, pr_weighted: state.prWeighted,
+    patch: state.patch, shrink_alpha: state.shrinkAlpha,
   });
-  return await r.json();
 }
 
 // One-sentence headline answer at the top of the tab.
 function renderHeadlineCard(cov) {
   const div = $("#coverage-headline");
   if (cov.empty) {
-    div.innerHTML = `<div class="empty-msg">Add champions to your pool to see coverage.</div>`;
+    setEmptyState(div, "Add champions to your pool to see coverage.");
     return;
   }
   const isSyn = state.view === "synergy";
@@ -232,8 +227,7 @@ function renderProblemMatchups(cov) {
 function renderCoverageHeatmap(cov) {
   const heat = $("#heatmap");
   if (cov.empty) {
-    Plotly.purge(heat);
-    heat.innerHTML = '<div class="empty-msg">Add champions to your pool to see coverage.</div>';
+    setEmptyState(heat, "Add champions to your pool to see coverage.", { purge: true });
     return;
   }
   if (!heat.classList.contains("js-plotly-plot")) heat.innerHTML = "";

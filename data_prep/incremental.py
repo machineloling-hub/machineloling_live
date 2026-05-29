@@ -50,9 +50,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
-
-from aggregate_matches import (count_one_feather, merge_partials, read_partial,
-                               write_partial)
+from aggregate_matches import count_one_feather, merge_partials, read_partial, write_partial
 from refresh_config import RefreshConfig
 
 _STATE_SCHEMA = 1
@@ -213,7 +211,7 @@ def aggregate_incremental(
             "hash": h,
             "n_rows": n_rows,
             "size": size,
-            "processed_at": _dt.datetime.now(_dt.timezone.utc).strftime(
+            "processed_at": _dt.datetime.now(_dt.UTC).strftime(
                 "%Y-%m-%dT%H:%M:%SZ"),
         }
 

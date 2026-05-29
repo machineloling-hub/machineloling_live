@@ -394,6 +394,18 @@ async function _strengthCurvesLookup(body) {
 // Drop-in `fetch()` replacement — same call signature, returns a
 // Response-like object with `.json()` so existing call sites work
 // unchanged. Routes /api/* to the wasm engine or static JSON.
+// Thin wrapper for the common POST-JSON-and-parse pattern. Most endpoint
+// callers don't care about the underlying Response object, only the parsed
+// body; this collapses ~10 lines of boilerplate per call site.
+async function apiPost(path, body) {
+  const r = await apiFetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
 async function apiFetch(input, init) {
   const { engine } = await _loadEngine();
   const urlStr = typeof input === 'string' ? input : input.url;
@@ -502,20 +514,8 @@ function topNChampions(role, n) {
 // ──────────────────────────────────────────────────────────────────────────
 // COVERAGE TAB (Matchup / Synergy)
 // ──────────────────────────────────────────────────────────────────────────
-async function fetchCoverage() {
-  if (state.pool.length === 0) return { empty: true };
-  const r = await apiFetch("/api/coverage", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role, other_role: state.otherRole,
-      mode: state.view, pool: state.pool,
-      top_x: state.topX, pr_floor: state.prFloor, pr_weighted: state.prWeighted,
-      patch: state.patch, shrink_alpha: state.shrinkAlpha,
-    }),
-  });
-  return await r.json();
-}
+// fetchCoverage lives in views/coverage.js; this file used to host a
+// duplicate copy from the pre-wasm era.
 
 export function getChampionsData() { return _championsData; }
 export function getDataSourceInfo() {
@@ -529,6 +529,6 @@ export function getDataSourceInfo() {
 }
 export {
   _loadEngine, _loadStrengthCurves,
-  apiFetch,
+  apiFetch, apiPost,
   loadChampionsFor, topNChampions,
 };

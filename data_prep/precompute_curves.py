@@ -37,9 +37,8 @@ sys.path.insert(0, str(ROOT / "_reference_backend"))
 import dataclasses  # noqa: E402
 
 import numpy as np  # noqa: E402
-
-from data import load_all, ROLES  # noqa: E402
 import precompute_pool_distributions as pcp  # noqa: E402
+from data import ROLES, load_all  # noqa: E402
 from precompute_pool_distributions import (  # noqa: E402
     LANE_MATCH_OPPONENTS,
     _build_blind_z_array,
@@ -188,7 +187,7 @@ def main() -> None:
 
         for role in ROLES:
             for vals in combos:
-                params = dict(zip(keys, vals))
+                params = dict(zip(keys, vals, strict=True))
                 samples = sample_components(
                     store, role, rank,
                     params["pool_size"], params["top_x"],

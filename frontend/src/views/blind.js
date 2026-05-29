@@ -1,6 +1,6 @@
 import { state } from "../state.js";
-import { apiFetch } from "../api.js";
-import { $, champImg, champIconUrl, fmtSign, tealOrangeBg, BLIND_COLOR } from "../utils.js";
+import { apiPost } from "../api.js";
+import { $, champImg, champIconUrl, fmtSign, tealOrangeBg, BLIND_COLOR, setEmptyState } from "../utils.js";
 
 const _ROLE_DISPLAY = {
   TOP: "Toplane",
@@ -15,20 +15,15 @@ const _roleTitle = (r) => _ROLE_DISPLAY[r] || r;
 // BLINDABILITY TAB
 // ──────────────────────────────────────────────────────────────────────────
 async function refreshBlindability() {
-  const r = await apiFetch("/api/blindability", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      my_role: state.role, pool: state.pool,
-      pr_floor: state.prFloor, pr_weighted: state.prWeighted,
-      patch: state.patch, shrink_alpha: state.shrinkAlpha,
-    }),
+  const data = await apiPost("/api/blindability", {
+    my_role: state.role, pool: state.pool,
+    pr_floor: state.prFloor, pr_weighted: state.prWeighted,
+    patch: state.patch, shrink_alpha: state.shrinkAlpha,
   });
-  const data = await r.json();
   const scatterDiv = $("#blind-scatter");
   const tableDiv = $("#blind-table");
   if (data.empty || !data.rows.length) {
-    Plotly.purge(scatterDiv);
-    scatterDiv.innerHTML = '<div class="empty-msg">No blindability data at this floor.</div>';
+    setEmptyState(scatterDiv, "No blindability data at this floor.", { purge: true });
     tableDiv.innerHTML = "";
     return;
   }
