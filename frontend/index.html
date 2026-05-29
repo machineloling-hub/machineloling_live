@@ -9,10 +9,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=73">
+<link rel="stylesheet" href="style.css?v=74">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
+<div id="dev-banner" role="note">Product in development, not intended for public use</div>
 <div id="app" class="app-shell" data-sidebar="expanded">
   <script>
     // Pre-paint: pick the correct sidebar state before the browser renders
@@ -68,6 +69,26 @@
     </nav>
   </header>
   <aside id="sidebar">
+    <nav id="app-nav" aria-label="Apps">
+      <h1>Apps</h1>
+      <div class="nav-group" data-app="cpd" data-expanded="true">
+        <button type="button" class="nav-group-trigger" aria-expanded="true">
+          <span class="nav-caret" aria-hidden="true">▾</span>
+          <span class="nav-group-label">Champion Pool Designer</span>
+        </button>
+        <div class="nav-group-items">
+          <button type="button" class="nav-item" data-view="welcome">Welcome</button>
+          <button type="button" class="nav-item" data-view="matchup">Matchup Coverage</button>
+          <button type="button" class="nav-item" data-view="synergy">Synergy Coverage</button>
+          <button type="button" class="nav-item" data-view="replacements">Expand Your Pool</button>
+          <button type="button" class="nav-item" data-view="blindability">Blindability</button>
+          <button type="button" class="nav-item" data-view="health">Pool Health</button>
+          <button type="button" class="nav-item" data-view="builder">Build From Scratch</button>
+        </div>
+      </div>
+      <button type="button" class="nav-item nav-standalone" data-view="meta">Meta Summary</button>
+    </nav>
+
     <h1>Controls</h1>
 
     <div class="field">
@@ -142,6 +163,10 @@
     <!-- Welcome / landing tab -->
     <section id="view-welcome" class="view active">
       <div class="welcome-wrap">
+        <div class="welcome-search-wrap">
+          <input id="welcome-champ-search" class="welcome-champ-search" type="text"
+                 placeholder="Search champion…" autocomplete="off" aria-label="Search champion">
+        </div>
         <h2 class="welcome-title">Champion Pool Designer</h2>
         <p class="welcome-lead">Pick your role and add champions to your pool in the sidebar, then jump in:</p>
         <div class="welcome-links">
@@ -351,7 +376,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=73"></script>
+<script type="module" src="src/main.js?v=74"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>

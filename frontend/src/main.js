@@ -243,6 +243,7 @@ function _initRankDropdown() {
 function setActiveView(view) {
   state.view = view;
   $$(".tabs-top .tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
+  $$("#app-nav .nav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
   // matchup + synergy share #view-coverage; everything else has its own section
   const isCov = view === "matchup" || view === "synergy";
   const sectionId = isCov ? "view-coverage" : `view-${view}`;
@@ -425,6 +426,20 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   $$(".tabs-top .tab-btn").forEach((b) =>
     b.addEventListener("click", () => { setActiveView(b.dataset.view); refresh(); })
   );
+
+  // Sidebar app nav
+  $$("#app-nav .nav-item").forEach((b) =>
+    b.addEventListener("click", () => { setActiveView(b.dataset.view); refresh(); })
+  );
+  // Collapsible app group
+  $$("#app-nav .nav-group-trigger").forEach((b) => {
+    b.addEventListener("click", () => {
+      const group = b.closest(".nav-group");
+      const expanded = group.dataset.expanded !== "false";
+      group.dataset.expanded = String(!expanded);
+      b.setAttribute("aria-expanded", String(!expanded));
+    });
+  });
 
   // Welcome-tab tile buttons → navigate to the named view
   $$("#view-welcome .welcome-tile").forEach((b) =>
