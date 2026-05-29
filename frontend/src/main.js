@@ -30,6 +30,8 @@ const VIEW_LABELS = {
   meta:         "Meta summary",
   health:       "Pool Health",
   builder:      "Build From Scratch",
+  jungle:       "Jungle Clear Summary",
+  objectives:   "Objectives Summary",
 };
 
 
