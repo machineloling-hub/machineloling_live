@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=79">
+<link rel="stylesheet" href="style.css?v=80">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -168,8 +168,20 @@
         <h1 class="welcome-title">machineloling</h1>
         <div class="welcome-search-wrap">
           <input id="welcome-champ-search" class="welcome-champ-search" type="text"
-                 placeholder="Search champion…" autocomplete="off" aria-label="Search champion">
+                 placeholder="Search champion…" autocomplete="off" aria-label="Search champion"
+                 role="combobox" aria-autocomplete="list" aria-expanded="false"
+                 aria-controls="welcome-champ-suggest">
+          <ul id="welcome-champ-suggest" class="welcome-champ-suggest" hidden role="listbox"></ul>
         </div>
+      </div>
+    </section>
+
+    <!-- Per-champion dashboard placeholder -->
+    <section id="view-champ" class="view">
+      <div class="under-construction">
+        <h2 id="champ-dash-title">Champion dashboard</h2>
+        <p>Under development.</p>
+        <p>In the meantime, please check out the <a href="#" id="champ-dash-cpd-link">Champion Pool Designer</a>.</p>
       </div>
     </section>
 
@@ -318,7 +330,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=79"></script>
+<script type="module" src="src/main.js?v=80"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>

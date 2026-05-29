@@ -373,6 +373,41 @@ button { font-family: inherit; }
   display: flex; justify-content: center;
   width: 100%; max-width: 560px;
   margin: 0 auto;
+  position: relative;
+}
+
+.welcome-champ-suggest {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  margin: 0; padding: 4px 0;
+  list-style: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 50;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+  text-align: left;
+}
+.welcome-champ-suggest li {
+  padding: 8px 14px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+.welcome-champ-suggest li:hover,
+.welcome-champ-suggest li.active {
+  background: var(--surface-3, rgba(255,255,255,0.06));
+}
+.welcome-champ-suggest .empty {
+  color: var(--text-muted);
+  cursor: default;
+}
+.under-construction a {
+  color: var(--accent, #f1c84b);
+  text-decoration: underline;
 }
 
 /* ── Under-construction placeholder ────────────────────────────────────── */

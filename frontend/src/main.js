@@ -32,6 +32,7 @@ const VIEW_LABELS = {
   builder:      "Build From Scratch",
   jungle:       "Jungle Clear Summary",
   objectives:   "Objectives Summary",
+  champ:        "Champion dashboard",
 };
 
 
@@ -267,6 +268,110 @@ function setActiveView(view) {
   }
 }
 
+// ── Welcome champion search ──────────────────────────────────────────────
+// Loads champion lists for every role (lazily, once), then provides a
+// type-ahead dropdown. Picking a champion routes to the "champ dashboard"
+// placeholder view, with the champion name reflected in its title.
+let _allChampsCache = null;
+async function loadAllChampions() {
+  if (_allChampsCache) return _allChampsCache;
+  const roles = ["TOP", "JUNGLE", "MID", "ADC", "SUP"];
+  await Promise.all(roles.map((r) => loadChampionsFor(r).catch(() => null)));
+  const set = new Set();
+  for (const r of roles) {
+    for (const c of state.champsByRole[r] || []) set.add(c.champion);
+  }
+  _allChampsCache = Array.from(set).sort((a, b) => a.localeCompare(b));
+  return _allChampsCache;
+}
+
+function wireWelcomeChampSearch() {
+  const input = document.getElementById("welcome-champ-search");
+  const list  = document.getElementById("welcome-champ-suggest");
+  if (!input || !list) return;
+
+  let activeIdx = -1;
+  let lastMatches = [];
+
+  function openChamp(name) {
+    const titleEl = document.getElementById("champ-dash-title");
+    if (titleEl) titleEl.textContent = `${name} — champion dashboard`;
+    input.value = "";
+    hide();
+    setActiveView("champ");
+    refresh();
+  }
+
+  function hide() {
+    list.hidden = true;
+    input.setAttribute("aria-expanded", "false");
+    activeIdx = -1;
+  }
+
+  function render(matches) {
+    lastMatches = matches;
+    if (!matches.length) {
+      list.innerHTML = `<li class="empty">No champions match</li>`;
+    } else {
+      list.innerHTML = matches.map((n, i) =>
+        `<li role="option" data-name="${n}" data-i="${i}"${i === activeIdx ? ' class="active"' : ""}>${n}</li>`
+      ).join("");
+    }
+    list.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+  }
+
+  async function update() {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { hide(); return; }
+    const all = await loadAllChampions();
+    const starts = [];
+    const contains = [];
+    for (const n of all) {
+      const lower = n.toLowerCase();
+      if (lower.startsWith(q)) starts.push(n);
+      else if (lower.includes(q)) contains.push(n);
+    }
+    activeIdx = -1;
+    render([...starts, ...contains].slice(0, 20));
+  }
+
+  input.addEventListener("input", update);
+  input.addEventListener("focus", () => { if (input.value.trim()) update(); });
+  input.addEventListener("keydown", (e) => {
+    if (list.hidden) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeIdx = Math.min(lastMatches.length - 1, activeIdx + 1);
+      render(lastMatches);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeIdx = Math.max(0, activeIdx - 1);
+      render(lastMatches);
+    } else if (e.key === "Enter") {
+      if (activeIdx >= 0 && lastMatches[activeIdx]) {
+        e.preventDefault();
+        openChamp(lastMatches[activeIdx]);
+      } else if (lastMatches.length === 1) {
+        e.preventDefault();
+        openChamp(lastMatches[0]);
+      }
+    } else if (e.key === "Escape") {
+      hide();
+    }
+  });
+  list.addEventListener("mousedown", (e) => {
+    // mousedown (not click) to fire before input blur hides the list
+    const li = e.target.closest("li[data-name]");
+    if (!li) return;
+    e.preventDefault();
+    openChamp(li.dataset.name);
+  });
+  document.addEventListener("click", (e) => {
+    if (!list.contains(e.target) && e.target !== input) hide();
+  });
+}
+
 let refreshPending = false;
 
 // ── Sidebar prefs persistence ────────────────────────────────────────────
@@ -455,6 +560,16 @@ async function init() {  // Restore cached sidebar settings (role/weights/etc.) 
   $$("#view-welcome .welcome-tile").forEach((b) =>
     b.addEventListener("click", () => { setActiveView(b.dataset.go); refresh(); })
   );
+
+  // Welcome champion search → suggestion dropdown → champion dashboard
+  wireWelcomeChampSearch();
+  // CTA link on the champion dashboard placeholder routes back to CPD.
+  const cpdLink = document.getElementById("champ-dash-cpd-link");
+  if (cpdLink) cpdLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    setActiveView("matchup");
+    refresh();
+  });
 
   // Role
   $("#role").addEventListener("change", async (e) => {
