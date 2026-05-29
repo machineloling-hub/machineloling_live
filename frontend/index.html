@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0B0F19">
-<title>Champion Pool Designer</title>
+<title>machineloling</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=74">
+<link rel="stylesheet" href="style.css?v=75">
 <script src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -48,9 +48,9 @@
       </svg>
     </button>
     <div class="topbar-brand">
-      <span class="brand-mark" aria-hidden="true">P</span>
+      <span class="brand-mark" aria-hidden="true">M</span>
       <span class="brand-name">
-        Pool Designer
+        machineloling
         <span class="brand-sub" id="brand-sub-patch">Patch …</span>
       </span>
     </div>
@@ -71,13 +71,13 @@
   <aside id="sidebar">
     <nav id="app-nav" aria-label="Apps">
       <h1>Apps</h1>
+      <button type="button" class="nav-item nav-standalone" data-view="welcome">Home</button>
       <div class="nav-group" data-app="cpd" data-expanded="true">
         <button type="button" class="nav-group-trigger" aria-expanded="true">
           <span class="nav-caret" aria-hidden="true">▾</span>
           <span class="nav-group-label">Champion Pool Designer</span>
         </button>
         <div class="nav-group-items">
-          <button type="button" class="nav-item" data-view="welcome">Welcome</button>
           <button type="button" class="nav-item" data-view="matchup">Matchup Coverage</button>
           <button type="button" class="nav-item" data-view="synergy">Synergy Coverage</button>
           <button type="button" class="nav-item" data-view="replacements">Expand Your Pool</button>
@@ -166,83 +166,6 @@
         <div class="welcome-search-wrap">
           <input id="welcome-champ-search" class="welcome-champ-search" type="text"
                  placeholder="Search champion…" autocomplete="off" aria-label="Search champion">
-        </div>
-        <h2 class="welcome-title">Champion Pool Designer</h2>
-        <p class="welcome-lead">Pick your role and add champions to your pool in the sidebar, then jump in:</p>
-        <div class="welcome-links">
-          <a href="https://machineloling.com/" target="_blank" rel="noopener noreferrer">machineloling.com</a>
-          <span class="sep">·</span>
-          <a href="https://x.com/machineloling" target="_blank" rel="noopener noreferrer">@machineloling on X</a>
-          <span class="sep">·</span>
-          <a href="https://ko-fi.com/machineloling" target="_blank" rel="noopener noreferrer">Support on Ko-fi</a>
-        </div>
-
-        <div class="welcome-group">
-          <h3>Explore your current pool</h3>
-          <div class="welcome-tiles">
-            <button class="welcome-tile" data-go="matchup">
-              <span class="wt-title">Matchup Coverage</span>
-              <span class="wt-desc">Heatmap of your pool's win-rate edge against every common enemy champion, by role.</span>
-            </button>
-            <button class="welcome-tile" data-go="synergy">
-              <span class="wt-title">Synergy Coverage</span>
-              <span class="wt-desc">Heatmap of your pool's win-rate edge when paired with every common teammate, by role.</span>
-            </button>
-            <button class="welcome-tile" data-go="health">
-              <span class="wt-title">Pool Health</span>
-              <span class="wt-desc">At-a-glance summary of coverage, blindability, and which pool members overlap — find the holes and the redundancies.</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="welcome-group">
-          <h3>Improve your pool</h3>
-          <div class="welcome-tiles">
-            <button class="welcome-tile" data-go="replacements">
-              <span class="wt-title">Expand Your Pool</span>
-              <span class="wt-desc">Find the best champion to add next, ranked by what matters to you.</span>
-            </button>
-            <button class="welcome-tile" data-go="builder">
-              <span class="wt-title">Build From Scratch</span>
-              <span class="wt-desc">Lock in a few core champions, drop in candidates, and let the engine rank every combo by total weighted strength.</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="welcome-group">
-          <h3>Explore the meta</h3>
-          <div class="welcome-tiles">
-            <button class="welcome-tile" data-go="blindability">
-              <span class="wt-title">Blindability</span>
-              <span class="wt-desc">Which champions perform consistently against any opponent — i.e. safe blind picks — and which are polarized.</span>
-            </button>
-            <button class="welcome-tile" data-go="meta">
-              <span class="wt-title">Meta summary</span>
-              <span class="wt-desc">Stacked bars of champion playrate per rank bracket (Silver → Master+) with Sankey ribbons connecting the same champion across brackets. Click champions to highlight them across all bars.</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="welcome-group patch-notes">
-          <h3>Patch notes</h3>
-          <ul class="patch-notes-list">
-            <li>
-              <strong>v0.1 — Patch 16.9 — rank brackets</strong>
-              <span class="patch-notes-date">May 7, 2026</span>
-              <span class="patch-notes-desc">
-                Pick rates now ship for six rank brackets (Silver, Gold, Platinum,
-                Emerald, Diamond, Master+) on patch 16.9. The "Pick-rate patch"
-                control in the sidebar is now a <em>Rank bracket</em> selector —
-                switching it re-weights matchup/synergy scoring with that
-                bracket's playrates and reloads the strength-curve reference
-                distribution to match. Default is Diamond.
-                <br><br>
-                <em>Heads up:</em> historical patches (16.1–16.8) are no longer
-                selectable. The app now ships only the current patch's data
-                across the six rank brackets — past patches have been dropped.
-              </span>
-            </li>
-          </ul>
         </div>
       </div>
     </section>
@@ -376,7 +299,7 @@
     defaultTier: "diamond",
   };
 </script>
-<script type="module" src="src/main.js?v=74"></script>
+<script type="module" src="src/main.js?v=75"></script>
 <script data-goatcounter="https://machineloling.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>

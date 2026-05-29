@@ -22,7 +22,7 @@ function defaultOtherRole(role, view) {
 
 // Friendly labels shown in the topbar crumb when each tab is active.
 const VIEW_LABELS = {
-  welcome:      "Welcome",
+  welcome:      "Home",
   matchup:      "Matchup Coverage",
   synergy:      "Synergy Coverage",
   replacements: "Expand Your Pool",
