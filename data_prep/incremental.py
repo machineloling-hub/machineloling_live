@@ -53,7 +53,14 @@ import pandas as pd
 from aggregate_matches import count_one_feather, merge_partials, read_partial, write_partial
 from refresh_config import RefreshConfig
 
-_STATE_SCHEMA = 1
+_STATE_SCHEMA = 2
+# Bumping _STATE_SCHEMA invalidates all on-disk and S3-mirrored partials
+# from older runs. Bump whenever the per-feather aggregation semantics
+# change (e.g. tier filter logic, dup-role handling, schema).
+# History:
+#   1 -> initial
+#   2 -> drop per-participant tier filter on pr/individual counters
+#        (matchup/synergy semantics were already match-level)
 
 
 def _partials_root(cfg: RefreshConfig) -> Path:
@@ -103,6 +110,13 @@ def _load_state(cfg: RefreshConfig) -> dict:
     except Exception:
         # Corrupted state — treat as empty; partials on disk will be
         # rediscovered/recomputed lazily.
+        return {"schema": _STATE_SCHEMA, "tier": cfg.tier, "feathers": {}}
+    # Schema mismatch: discard cached entries so every feather is
+    # recomputed under the new aggregation semantics. The on-disk
+    # partial parquets are kept until they're overwritten (cheap, and
+    # the cleanup pass at the end of aggregate_incremental prunes any
+    # that no longer correspond to an active feather).
+    if int(data.get("schema", 0)) != _STATE_SCHEMA:
         return {"schema": _STATE_SCHEMA, "tier": cfg.tier, "feathers": {}}
     data.setdefault("schema", _STATE_SCHEMA)
     data.setdefault("tier", cfg.tier)
