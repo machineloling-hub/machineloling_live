@@ -170,10 +170,15 @@ def _count_feather_rows(
         if dup:
             n_dup_role_skipped += 1
             continue
-        # Individual WR + PR contributions: only count participants
-        # that are actually in cfg.tier (per-participant bucketing).
-        # individual_full mirrors matchup/synergy: every in-tier-match
-        # participant counts, so LOO subtraction is consistent.
+        # Individual WR + PR contributions: count every participant of
+        # an in-tier match, matching matchup/synergy semantics. The
+        # upstream puller only tags the seed account's tier (the other
+        # 9 players in each lobby arrive with tier=null), so the older
+        # per-participant tier filter discarded ~90% of usable data and
+        # made meta-summary "games" inconsistent with matrix densities.
+        # The match-level filter (`tier in buckets` above) keeps the
+        # tier semantic — these are picks observed in matches that
+        # contain at least one player of cfg.tier.
         for role, plist in by_role.items():
             lane_l = _ROLE_TO_LANE_LOWER[role]
             for p in plist:
@@ -183,8 +188,6 @@ def _count_feather_rows(
                 won = 1 if _team_won(p, winner) else 0
                 ind_full_counts[(champ, role)][0] += 1
                 ind_full_counts[(champ, role)][1] += won
-                if _participant_tier_bucket(p) != tier:
-                    continue
                 ind_counts[(champ, role)][0] += 1
                 ind_counts[(champ, role)][1] += won
                 pr_counts[(lane_l, champ)] += 1

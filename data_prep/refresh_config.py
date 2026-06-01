@@ -29,7 +29,7 @@ REFRESH_REGIONS            — comma-separated list. Default: NA1,KR,EUW1.
 REFRESH_PR_FLOOR           — minimum pick-rate to include a champion in
                              output matrices. Default: 0.001.
 REFRESH_MIN_GAMES_CELL     — minimum games for a (champ_a, champ_b) cell
-                             to be retained pre-shrinkage. Default: 50.
+                             to be retained pre-shrinkage. Default: 20.
 REFRESH_HMC_DRAWS          — NUTS draws per chain for hierarchical Bayes.
                              Default: 1000.
 REFRESH_HMC_WARMUP         — NUTS warmup draws. Default: 1000.
@@ -43,6 +43,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROLES = ["TOP", "JUNGLE", "MID", "ADC", "SUP"]
+# silver/gold/platinum are kept in the enum (so legacy env vars still
+# validate) but the puller only seeds from emerald+ leaderboards, so
+# refreshing them produces zero contributing matches in practice — they
+# are excluded from the CI matrix in .github/workflows/refresh.yml.
 TIERS = ["iron", "bronze", "silver", "gold", "platinum",
          "emerald", "diamond", "master_plus"]
 
@@ -112,7 +116,7 @@ class RefreshConfig:
             local_raw_dir=Path(local_raw) if local_raw else None,
             local_out_dir=Path(os.environ.get("LOCAL_OUT_DIR", "dist")).resolve(),
             pr_floor=_pos_float("REFRESH_PR_FLOOR", 0.001),
-            min_games_cell=_pos_int("REFRESH_MIN_GAMES_CELL", 50),
+            min_games_cell=_pos_int("REFRESH_MIN_GAMES_CELL", 20),
             hmc_draws=_pos_int("REFRESH_HMC_DRAWS", 1000),
             hmc_warmup=_pos_int("REFRESH_HMC_WARMUP", 1000),
             hmc_chains=_pos_int("REFRESH_HMC_CHAINS", 2),

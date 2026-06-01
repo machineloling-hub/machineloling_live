@@ -31,7 +31,7 @@ on:
         required: true
         default: "diamond"
         type: choice
-        options: [all, silver, gold, platinum, emerald, diamond, master_plus]
+        options: [all, emerald, diamond, master_plus]
 
 permissions:
   contents: read
@@ -43,7 +43,10 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        tier: [silver, gold, platinum, emerald, diamond, master_plus]
+        # silver/gold/platinum are excluded: the Riot API puller seeds
+        # from emerald+ leaderboards, so refreshing those buckets always
+        # produces zero contributing matches (see refresh.py guard).
+        tier: [emerald, diamond, master_plus]
     concurrency:
       group: refresh-${{ matrix.tier }}
       cancel-in-progress: false
