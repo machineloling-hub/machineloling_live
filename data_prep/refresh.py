@@ -271,10 +271,36 @@ def _stage_pack(cfg: RefreshConfig, staging_dir: Path) -> list[Path]:
     return out
 
 
+def _has_tier_data(cfg: RefreshConfig, artifacts: list[Path]) -> bool:
+    """Return True iff the freshly-built champions.json has any rows for
+    cfg.tier. Empty `by_patch[cfg.tier]` means the refresh ran end-to-end
+    but produced no match data for this tier (e.g. no raw feathers
+    contained participants in this bracket). Publishing such an artifact
+    would register a dead entry in the frontend rank dropdown."""
+    ch_path = next((p for p in artifacts if p.name == "champions.json"), None)
+    if ch_path is None or not ch_path.exists():
+        return False
+    try:
+        data = json.loads(ch_path.read_text())
+    except Exception:
+        return False
+    by_patch = data.get("by_patch") or {}
+    roles = by_patch.get(cfg.tier) or {}
+    return any(roles.get(r) for r in roles)
+
+
 def _stage_upload(cfg: RefreshConfig, artifacts: list[Path], refresh_kind: str) -> None:
     if not cfg.s3_bucket:
         print("[upload] skipped (S3_BUCKET unset)")
         return
+    if not _has_tier_data(cfg, artifacts):
+        print(f"[upload] ABORT: champions.json has no rows for tier={cfg.tier}. "
+              "Refusing to publish an empty tier (would create a dead entry "
+              "in the frontend rank dropdown). Set REFRESH_ALLOW_EMPTY=1 to "
+              "override.")
+        if os.environ.get("REFRESH_ALLOW_EMPTY") != "1":
+            return
+        print("[upload] REFRESH_ALLOW_EMPTY=1 → continuing anyway.")
     result = s3_io.upload_artifacts(cfg, artifacts)
     print(f"[upload] tier={cfg.tier} version={result['version']} kind={refresh_kind}")
     for u in result["uris"]:

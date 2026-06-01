@@ -416,12 +416,20 @@ async function apiFetch(input, init) {
 
   let data;
   if (path === '/api/meta') {
+    // Prefer the manifest's tier list (authoritative across all refreshes)
+    // over the bootstrap tier's champions.json#patches, which only
+    // reflects the tiers that existed at the time that tier was packed.
+    // Falls back to champions.json#patches when no manifest is loaded
+    // (offline / local ./data/ mode).
+    const manifestPatches = (_currentManifest && _currentManifest.tiers)
+      ? Object.keys(_currentManifest.tiers)
+      : null;
     data = {
       roles: ["TOP", "JUNGLE", "MID", "ADC", "SUP"],
       matchup_threshold: 0.75,
       synergy_threshold: 0.5,
       pool_builder_cap: 10000,
-      patches: _championsData.patches,
+      patches: manifestPatches || _championsData.patches,
       latest_patch: _championsData.latest_patch,
       // Actual game-patch version of the source data (e.g. "16.10"). Used
       // by main.js to populate the otherwise-hardcoded "Patch X" UI spans.
