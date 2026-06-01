@@ -22,3 +22,5 @@ nul
 *.log
 
 mobile.png
+
+tmp_*
