@@ -1,5 +1,5 @@
 { "Version":"2012-10-17","Statement":[{
   "Sid":"PublicReadArtifacts","Effect":"Allow","Principal":"*",
   "Action":"s3:GetObject",
-  "Resource":"arn:aws:s3:::machineloling/artifacts/*"
+  "Resource":"arn:aws:s3:::machineloling-database/artifacts/*"
 }]}
