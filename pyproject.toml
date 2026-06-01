@@ -2,6 +2,27 @@
 # The Riot API scraper lives in a separate repo:
 # https://github.com/machineloling-hub/riot-api-pull-pipeline
 
+# Minimal project metadata so CI environments (e.g. Cloudflare Pages) that
+# auto-detect pyproject.toml and run `pip install .` don't trip setuptools'
+# flat-layout auto-discovery on engine/, frontend/, data_prep/. We ship no
+# Python package from this repo; data_prep/ is run as scripts.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "machineloling-live"
+version = "0.0.0"
+description = "Tooling shell for the machineloling live site; ships no Python package."
+requires-python = ">=3.11"
+
+[tool.setuptools]
+py-modules = []
+
+[tool.setuptools.packages.find]
+include = []
+exclude = ["*"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
