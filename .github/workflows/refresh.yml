@@ -106,3 +106,47 @@ jobs:
            github.event.inputs.tier == 'all' ||
            github.event.inputs.tier == matrix.tier)
         run: python data_prep/refresh.py
+
+  # Post-matrix stitch pass. The main `refresh` job runs tiers in
+  # parallel; each one's pack step reads sibling pr_table_{tier}.parquet
+  # from S3 _shared_pr/, but siblings may not have been re-uploaded yet
+  # at that moment, so cross-tier rows in champions.json lag by one
+  # cycle. This job runs after every tier has finished and re-stitches
+  # champions.json against the now-current snapshot. It only touches
+  # champions.json; matrices.bin, index.json, theta_table_*, and the
+  # manifest are not modified.
+  repack:
+    needs: refresh
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        tier: [emerald, diamond, master_plus]
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-2' }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      S3_PREFIX_RAW: ${{ secrets.S3_PREFIX_RAW || 'raw/feather/' }}
+      S3_PREFIX_OUT: ${{ secrets.S3_PREFIX_OUT || 'artifacts/' }}
+      REFRESH_TIER: ${{ matrix.tier }}
+      REFRESH_QUEUE: ranked_solo
+      REFRESH_PATCH_RANGE: "16.1-16.10"
+      REFRESH_REGIONS: "NA1,KR,EUW1,VN2"
+      PYTHONIOENCODING: "utf-8"
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install Python deps
+        run: pip install -r data_prep/requirements.txt
+      - name: Repack champions.json with current shared-PR snapshot
+        if: >-
+          github.event_name != 'workflow_dispatch' ||
+          github.event.inputs.tier == 'all' ||
+          github.event.inputs.tier == matrix.tier
+        run: python data_prep/refresh.py --only repack

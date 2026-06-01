@@ -268,7 +268,74 @@ def _stage_pack(cfg: RefreshConfig, staging_dir: Path) -> list[Path]:
     theta = staging_dir / f"theta_table_{cfg.tier}.parquet"
     if theta.exists():
         out.append(theta)
+    # Sidecar inputs to pack_champions.py. Uploading them lets the
+    # post-matrix `repack` stage re-stitch champions.json against the
+    # now-current `_shared_pr/` snapshot without re-running pull /
+    # aggregate / shrinkage / pack_matrices.
+    for name in ("individual_wr.csv", "data_meta.json"):
+        p = staging_dir / name
+        if p.exists():
+            out.append(p)
     return out
+
+
+def _stage_repack(cfg: RefreshConfig) -> list[Path]:
+    """Re-stitch champions.json against the current shared-PR snapshot.
+
+    Per-tier matrix legs run in parallel. Each tier's pack step reads
+    sibling `pr_table_{other_tier}.parquet` from S3 `_shared_pr/`, but
+    those sibling files may not have been refreshed yet, leading to
+    cross-tier rows in champions.json that lag by one cycle.
+
+    This stage runs after every matrix leg has finished, on a fresh
+    runner, with only the `repack` env set. It:
+      1. Downloads sibling pr_table_{tier}.parquet from `_shared_pr/`
+         (which now contains every tier's freshest snapshot).
+      2. Downloads this tier's `individual_wr.csv` + `data_meta.json`
+         sidecars from the latest artifact prefix.
+      3. Runs pack_champions.py only.
+      4. Uploads the regenerated champions.json (overwriting `latest/`).
+
+    Matrices.bin, index.json, theta_table_{tier}.parquet, and the
+    manifest are NOT touched: this stage only refreshes the cross-tier
+    summary view in champions.json.
+    """
+    if not cfg.s3_bucket:
+        print("[repack] skipped (S3_BUCKET unset)")
+        return []
+    STAGING_DIR.mkdir(parents=True, exist_ok=True)
+    # 1. Sibling PR parquets (now all current).
+    siblings = s3_io.download_shared_pr(cfg, STAGING_DIR)
+    sib_names = sorted(p.name for p in siblings)
+    print(f"[repack] downloaded {len(sib_names)} shared PR parquet(s) "
+          f"({', '.join(n.removeprefix('pr_table_').removesuffix('.parquet') for n in sib_names)})")
+    # 2. This tier's sidecars from the latest artifact prefix.
+    latest_prefix = f"{cfg.s3_prefix_out}{cfg.tier}/latest/"
+    s3 = s3_io._client(cfg)
+    for name in ("individual_wr.csv", "data_meta.json"):
+        key = latest_prefix + name
+        dest = STAGING_DIR / name
+        try:
+            s3.download_file(cfg.s3_bucket, key, str(dest))
+        except Exception as e:
+            raise SystemExit(
+                f"[repack] missing required sidecar s3://{cfg.s3_bucket}/{key} "
+                f"({e}). The producing tier must run a full refresh at least "
+                "once with the sidecar-upload code in place.")
+    # 3. Pack only champions.json.
+    env = os.environ.copy()
+    env["POOL_DESIGNER_DATA_DIR"] = str(STAGING_DIR)
+    subprocess.run([sys.executable, str(ROOT / "data_prep" / "pack_champions.py")],
+                   env=env, check=True, cwd=str(ROOT))
+    ch = ROOT / "dist" / "champions.json"
+    if not ch.exists():
+        raise SystemExit("[repack] pack_champions produced no champions.json")
+    # 4. Re-upload ONLY champions.json (versioned + latest mirror).
+    result = s3_io.upload_artifacts(cfg, [ch])
+    print(f"[repack] tier={cfg.tier} re-uploaded champions.json:")
+    for u in result["uris"]:
+        print(f"  -> {u}")
+    return [ch]
 
 
 def _has_tier_data(cfg: RefreshConfig, artifacts: list[Path]) -> bool:
@@ -311,26 +378,37 @@ def _stage_upload(cfg: RefreshConfig, artifacts: list[Path], refresh_kind: str) 
 
 STAGES = ["pull", "aggregate", "irt", "eb", "hier", "collect", "pack",
           "upload"]
+# `repack` is a post-matrix-only stage that re-stitches champions.json
+# against the freshest cross-tier `_shared_pr/` snapshot. It is NOT in
+# the default pipeline (the producing run already wrote champions.json
+# with whatever siblings were current then); the CI workflow invokes
+# it via `--only repack` from a job that runs after every tier in the
+# main matrix has finished uploading.
+POST_STAGES = ["repack"]
+ALL_STAGES = STAGES + POST_STAGES
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip", default="",
                     help="comma-separated stages to skip "
-                         f"(choices: {','.join(STAGES)})")
+                         f"(choices: {','.join(ALL_STAGES)})")
     ap.add_argument("--only", default="",
-                    help="comma-separated stages to run; everything else skipped")
+                    help="comma-separated stages to run; everything else skipped "
+                         f"(choices: {','.join(ALL_STAGES)})")
     args = ap.parse_args()
 
     cfg = RefreshConfig.from_env()
-    skip = {s.strip() for s in args.skip.split(",") if s.strip()}
+    # Default: run only the main pipeline; post-stages stay opt-in.
+    skip = set(POST_STAGES)
+    skip |= {s.strip() for s in args.skip.split(",") if s.strip()}
     if args.only:
         keep = {s.strip() for s in args.only.split(",") if s.strip()}
-        skip |= set(STAGES) - keep
+        skip = set(ALL_STAGES) - keep
     print(f"[refresh] tier={cfg.tier} queue={cfg.queue} "
           f"patches={cfg.patch_range} regions={cfg.regions}")
     print(f"[refresh] version={cfg.version}")
-    print(f"[refresh] stages: {[s for s in STAGES if s not in skip]}")
+    print(f"[refresh] stages: {[s for s in ALL_STAGES if s not in skip]}")
 
     feathers: list[Path] = []
     refreshed = cfg.staging_dir
@@ -362,9 +440,15 @@ def main() -> None:
             theta = STAGING_DIR / f"theta_table_{cfg.tier}.parquet"
             if theta.exists():
                 artifacts.append(theta)
+            for name in ("individual_wr.csv", "data_meta.json"):
+                p = STAGING_DIR / name
+                if p.exists():
+                    artifacts.append(p)
         # "full" if hier-Bayes ran this tick, "fast" if we skipped it.
         refresh_kind = "fast" if "hier" in skip else "full"
         _stage_upload(cfg, artifacts, refresh_kind)
+    if "repack" not in skip:
+        _stage_repack(cfg)
 
 
 if __name__ == "__main__":
