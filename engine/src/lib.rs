@@ -115,7 +115,7 @@ impl Engine {
             let remaining = target - keeps.len();
             Some(pool::combo_count(maybes.len(), remaining))
         };
-        let cap = 10_000_u64;
+        let cap = crate::util::consts::COMBO_COUNT_CAP;
         #[derive(serde::Serialize)]
         struct Resp {
             count: Option<u64>,

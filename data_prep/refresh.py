@@ -43,7 +43,6 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "data_prep"))
-sys.path.insert(0, str(ROOT / "_reference_backend"))
 
 import irt  # noqa: E402
 import s3_io  # noqa: E402

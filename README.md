@@ -1,140 +1,146 @@
-# Champion Pool Designer — static / WASM build
+# Champion Pool Designer
 
-Zero-backend port of `../deploy_pool_designer_fastapi_v2/`. All compute runs
-client-side in WebAssembly; deploys to GitHub Pages (or any static host) and
-scales infinitely on the CDN. Match data is sourced live from the
+A zero-backend League of Legends draft-analytics app. All compute runs
+client-side in WebAssembly, so the site is a bag of static files that can be
+served from any CDN and scales for free. Match data is sourced from the
 [riot-api-pull-pipeline](https://github.com/machineloling-hub/riot-api-pull-pipeline)
-(separate repo; S3-hosted feathers) and refreshed by `data_prep/refresh.py`.
+(a separate repo that lands raw match feathers in S3) and refreshed into
+compact binary artifacts by the `data_prep/` pipeline.
 
-## Architecture
+The app answers the questions a player asks when building a champion pool:
+matchup/synergy coverage, blindability, ban recommendations, pool health and
+redundancy, replacement suggestions, and live strength curves.
+
+## How it works
 
 ```
-┌─────── riot-api-pull-pipeline (out-of-band) ───────┐
-│  Riot API → match feathers →  S3://bucket/raw/...           │
-└─────────────────────────────────┬──────────────────────┘
-                              ↓ (data_prep/refresh.py)
-            aggregate → EB → hier-Bayes → pack → upload
-                              ↓
-              S3://bucket/artifacts/{tier}/matrices.bin
-                              ↓ (CDN)
-┌─────────────── browser ───────────────┐
-│  index.html / app.js / style.css      │  ~200 KB
-│                ↓ calls                │
-│  pkg/pool_designer_engine.{js,wasm}   │  ~480 KB total (28 + 455)
-│                ↓ reads                │
-│  data/matrices.bin       (~750 KB)    │
-│  data/index.json         (~64 KB)     │
-│  data/champions.json     (~310 KB)    │
-│  data/strength_curves.json (~31 MB)   │  lazy-loaded on Pool Health visit
-└───────────────────────────────────────┘
+┌──────── riot-api-pull-pipeline (separate repo) ────────┐
+│  Riot API → match feathers → s3://bucket/raw/...        │
+└────────────────────────────┬───────────────────────────┘
+                             │  data_prep/refresh.py
+                             ▼  aggregate → empirical-Bayes → hier-Bayes → pack → upload
+                  s3://bucket/artifacts/{tier}/matrices.bin
+                             │  (CDN)
+┌────────────────────────────▼───────────────────────────┐
+│  browser                                                │
+│    frontend/  (ES modules + CSS)                        │
+│        │ calls                                          │
+│    pkg/pool_designer_engine.{js,wasm}   (Rust → WASM)   │
+│        │ reads                                          │
+│    data/matrices.bin, index.json, champions.json        │
+└─────────────────────────────────────────────────────────┘
 ```
 
-First-paint payload is ~1.5 MB (the strength curves are deferred). Total
-budget across all features is ~33 MB uncompressed; gzip on the CDN cuts
-that ~70% (~10 MB on the wire). The strength curve file is large because
-we ship raw Monte Carlo samples (250 per scenario × 4 metrics × 4320 grid
-points) rather than precomputed slot stats — the frontend computes the
-slot stats client-side and derives `total_score` sample-by-sample under
-the user's exact weight sliders, which is the only way to make
-`total_score` σ work for arbitrary weights without re-running the MC at
-request time.
+First paint is roughly 1.5 MB; strength curves are computed live in the WASM
+engine rather than shipped, which keeps the payload small. The CDN's gzip
+trims the rest by about 70% on the wire.
 
-## Layout
+## Project layout
 
-| Dir | Purpose |
-|---|---|
-| `frontend/` | HTML / JS / CSS — calls the wasm engine instead of any backend. Self-contained for static hosting. |
-| `engine/` | Rust crate that compiles to `engine.wasm`. One module per ported endpoint family (`compute.rs`, `blind.rs`, `comparer.rs`, `bans.rs`, `health.rs`, `redundancy.rs`, `pool.rs`). |
-| `data_prep/` | Python refresh pipeline — pulls match feathers from S3, aggregates, runs Bayesian shrinkage, packs binary artifacts, uploads. See [data_prep/README.md](data_prep/README.md). |
-| `_reference_backend/` | Frozen copy of the FastAPI Python — source of truth for the math we ported. Don't edit. |
-| `dist/` | Build output: `matrices.bin`, `index.json`, `champions.json` plus `refreshed/{tier}/` and `staged/` working dirs. |
-| `deploy/` | Final upload bundle (mirror of `frontend/`) produced by `build.sh`. |
+| Path | Purpose |
+| --- | --- |
+| `frontend/` | Static site. ES modules under `src/` (`api.js`, `state.js`, `bus.js`, plus `views/` and `widgets/`), `index.html`, `style.css`. Calls the WASM engine directly — no server. |
+| `engine/` | Rust crate compiled to `pool_designer_engine.wasm`. One module per endpoint family under `src/endpoints/` (`compute`, `blind`, `comparer`, `bans`, `health`, `redundancy`, `pool`), with shared helpers in `src/util/`. |
+| `data_prep/` | Python refresh pipeline: pulls feathers from S3, aggregates, runs Bayesian shrinkage, packs binary artifacts, uploads. See [data_prep/README.md](data_prep/README.md). |
+| `_reference_backend/` | The original FastAPI implementation. It is the port oracle the Rust engine's doc comments reference **and** a live dependency — `data_prep/pack_matrices.py` and `pack_champions.py` reuse its data loader (`data.py`). Treat as read-only. |
+| `scripts/` | Frontend sanity checks: `check_imports.mjs` (every import resolves to a real export) and `check_undefs.mjs` (best-effort undefined-reference scan). |
+| `build.sh`, `build_pages.sh`, `cloudflare-build.sh` | Build entry points — see below. |
+| `dist/` | Generated build artifacts (`matrices.bin`, `index.json`, `champions.json` and working dirs). Not committed. |
+| `deploy/` | Final static bundle produced by the build scripts. Not committed. |
 
-## Status
+## Prerequisites
 
-All FastAPI endpoints are ported and verified working zero-server:
-
-| Endpoint | Module | Tab(s) it powers |
-|---|---|---|
-| `/api/meta`, `/api/champions/*` | apiFetch shim | Sidebar bootstrap |
-| `/api/coverage` | `compute.rs` | Matchup Coverage, Synergy Coverage |
-| `/api/blindability` | `blind.rs` | Blindability |
-| `/api/comparer` | `comparer.rs` | Individual Champ Compare |
-| `/api/bans` | `bans.rs` | Ban Recommender |
-| `/api/health` | `health.rs` + `redundancy.rs` | Pool Health (full) |
-| `/api/pool_summary` | `health.rs` | Pool Health strength panel |
-| `/api/replacements` | `pool.rs` | Replacement Finder |
-| `/api/build`, `/api/combo_count` | `pool.rs` | Pool Builder |
-| `/api/pool_strength_curves` | static lookup | Strength panels (snap to grid) |
+- Python 3.11+ (`pip install -r data_prep/requirements.txt` for the data pipeline)
+- Rust stable with the `wasm32-unknown-unknown` target
+  (`rustup target add wasm32-unknown-unknown`)
+- `wasm-bindgen-cli` 0.2.120 — it must match the `wasm-bindgen` crate version
+  pinned in `engine/Cargo.toml`, so install it explicitly:
+  `cargo install wasm-bindgen-cli --version 0.2.120 --locked`
 
 ## Build
 
-Prerequisites: Python 3.11+ (with `pandas`, `numpy`, `scipy`),
-Rust stable + the `wasm32-unknown-unknown` target,
-`wasm-bindgen-cli` 0.2.120 (`cargo install wasm-bindgen-cli --version 0.2.120`).
+There are three entry points for different situations:
+
+| Script | What it does | When to use |
+| --- | --- | --- |
+| `build.sh` | Full build: runs the `data_prep/` packers to regenerate `dist/*`, compiles the engine to WASM, stages the data into `frontend/data/`, and mirrors `frontend/` to `deploy/`. | Local builds when the source data or the engine changed. |
+| `build_pages.sh` | Engine + frontend only. Skips `data_prep/`; the deployed site fetches data at runtime from the public S3 bucket. | CI deploys (used by the GitHub Pages workflow) and engine/frontend-only changes. |
+| `cloudflare-build.sh` | Cloudflare Pages entry point: installs the toolchain if missing, builds the engine, and emits `frontend/` as the publish directory. | Cloudflare Pages builds. |
+
+```bash
+# Full local build (regenerates data, engine, and the deploy bundle):
+bash build.sh
+
+# Engine + frontend only (data fetched at runtime):
+bash build_pages.sh
+```
+
+Strength curves are produced live by the WASM engine, so the legacy
+`data_prep/precompute_curves.py` step is opt-in via
+`INCLUDE_PRECOMPUTE_CURVES=1 bash build.sh` and is only needed to revive the
+old precompute path.
+
+Both `build.sh` and `build_pages.sh` build into a temp directory and swap
+`deploy/` atomically, so a failed build can never publish an empty site.
+
+### Frontend checks
+
+The frontend has no bundler, so two lightweight scripts guard against broken
+imports. Run them after editing `frontend/src/`:
+
+```bash
+node scripts/check_imports.mjs
+node scripts/check_undefs.mjs
+```
+
+Formatting is handled by Prettier (`frontend/.prettierrc.json`) for the
+frontend and Ruff (`pyproject.toml`) for Python.
+
+## Deploy
+
+### GitHub Pages (automated)
+
+`.github/workflows/deploy.yml` builds on every push to `main` (and on manual
+dispatch): it installs the toolchain, runs `build_pages.sh`, and publishes
+`deploy/` to GitHub Pages. To set it up, push the whole project to a repo and
+set **Settings → Pages → Source: GitHub Actions**.
+
+### GitHub Pages (manual)
 
 ```bash
 bash build.sh
-# ...or with the slow strength-curve precompute skipped (keeps the existing
-# strength_curves.json — fine for engine-only changes):
-SKIP_CURVES=1 bash build.sh
+cd deploy
+git init && git add -A && git commit -m 'initial'
+git branch -M main
+git remote add origin <repo-url>
+git push -u origin main
 ```
 
-Outputs `deploy/`. Upload it as-is to any static host.
+Then set **Settings → Pages → Source: Deploy from branch → main → /(root)**.
 
-## Deploy to GitHub Pages
+### Cloudflare Pages
 
-Two paths.
+Point the project at `cloudflare-build.sh` and set the build output directory
+to `frontend`.
 
-### Manual one-shot
+## Data refresh
 
-1. Create a new repo under your GitHub account, e.g. `pool-designer-static`.
-2. Run `bash build.sh` locally. The deploy bundle lands in `deploy/`.
-3. From inside `deploy/`: `git init && git add -A && git commit -m 'initial'
-   && git branch -M main && git remote add origin <repo url> && git push -u origin main`.
-4. GitHub repo → **Settings → Pages → Source: Deploy from branch → main → /(root)**.
-5. Wait ~30s for the first build. Site is live at
-   `https://<username>.github.io/pool-designer-static/`.
+`.github/workflows/refresh.yml` keeps the artifacts current on a schedule
+(a fast cadence every two hours, a full hierarchical-Bayes pass nightly) and
+uploads versioned `matrices.bin` / `index.json` / `champions.json` to S3. It
+needs the AWS credentials and bucket secrets documented at the top of that
+workflow.
 
-### Automated (recommended)
+To run the pipeline by hand — from S3 or a local mirror, and to control which
+stages run — see [data_prep/README.md](data_prep/README.md).
 
-The `.github/workflows/deploy.yml` already wired here builds on every push to
-`main` (and on manual dispatch).
+## Notes on the port
 
-1. Create a new repo and push the **whole project** (not just `frontend/`):
-   ```
-   git init
-   git add -A
-   git commit -m 'initial'
-   git remote add origin <repo url>
-   git push -u origin main
-   ```
-2. Repo → **Settings → Pages → Source: GitHub Actions**.
-3. Push triggers the workflow, which runs `build.sh` on a runner and
-   publishes `deploy/` to GitHub Pages.
+The Rust engine is a faithful port of `_reference_backend/`. A few backend
+concerns are intentionally dropped because they don't apply client-side:
 
-### DNS cutover (when ready to retire Fly)
-
-Site currently resolves at `https://pooldesigner.machineloling.com` via Fly.
-
-1. In GitHub Pages settings, add `pooldesigner.machineloling.com` as the
-   custom domain.
-2. In your DNS provider, change the CNAME for `pooldesigner` from
-   `<app>.fly.dev` to `<username>.github.io`.
-3. Wait for DNS propagation (~5 min – 1 h).
-4. Verify the new site loads + all tabs work.
-5. Tear down the Fly app (`fly apps destroy champion-pool-designer`) — bill
-   stops at the next billing cycle.
-
-## What's intentionally not in this port
-
-- **Server-side LRU cache** (`_CallCache` in the FastAPI version) — replaced
-  by per-tab memoization in JS. Per-user cache hit rate is lower, but every
-  call is now ~free CPU, so it doesn't matter.
-- **`noise_z` / `eb` / `hier-tight` shrinkage methods** — only `hier_wide`
-  (the production default) ships. Saves payload + complexity.
-- **Total Score density curves** — the per-component σ curves precompute
-  cleanly, but `total_score` depends on the user's weight sliders so its
-  reference distribution can't be precomputed without the weight axes,
-  which would 5–10× the strength_curves.json payload. The strength panel
-  shows "no data" for that one cell; per-component σs are unaffected.
+- **Server-side LRU caching** is replaced by per-tab memoization in JS.
+- **Alternative shrinkage methods** (`noise_z`, `eb`, `hier_tight`) are not
+  shipped; only the production default `hier_wide` is, which trims the payload.
+- **Total-score density curves** can't be precomputed because they depend on
+  the user's live weight sliders, so per-component σ curves ship instead.

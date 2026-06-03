@@ -24,3 +24,7 @@ pub const TOP_X_DEFAULT: usize = 1;
 /// Coverage thresholds (in z-score units) — see `compute.rs::coverage`.
 pub const MATCHUP_THRESHOLD: f32 = 0.75;
 pub const SYNERGY_THRESHOLD: f32 = 0.5;
+
+/// Pool Builder combination-count display cap — counts above this are reported
+/// as `over_cap` rather than enumerated by the UI.
+pub const COMBO_COUNT_CAP: u64 = 10_000;
