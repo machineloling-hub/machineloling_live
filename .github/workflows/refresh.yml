@@ -59,7 +59,7 @@ jobs:
       S3_PREFIX_OUT: ${{ secrets.S3_PREFIX_OUT || 'artifacts/' }}
       REFRESH_TIER: ${{ matrix.tier }}
       REFRESH_QUEUE: ranked_solo
-      REFRESH_PATCH_RANGE: "16.1-16.10"
+      REFRESH_PATCH_RANGE: "16.11"
       REFRESH_REGIONS: "NA1,KR,EUW1,VN2"
       PYTHONIOENCODING: "utf-8"
       # Opt JS actions (checkout, setup-python) into Node.js 24. Node 20 is
@@ -132,7 +132,7 @@ jobs:
       S3_PREFIX_OUT: ${{ secrets.S3_PREFIX_OUT || 'artifacts/' }}
       REFRESH_TIER: ${{ matrix.tier }}
       REFRESH_QUEUE: ranked_solo
-      REFRESH_PATCH_RANGE: "16.1-16.10"
+      REFRESH_PATCH_RANGE: "16.11"
       REFRESH_REGIONS: "NA1,KR,EUW1,VN2"
       PYTHONIOENCODING: "utf-8"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
